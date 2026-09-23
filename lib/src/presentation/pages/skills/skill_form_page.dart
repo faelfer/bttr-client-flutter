@@ -91,26 +91,32 @@ class _SkillFormPageState extends State<SkillFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
-                  controller: _name,
-                  validator: (value) => Validation.name(value, max: 120),
-                  textCapitalization: TextCapitalization.sentences,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome da habilidade',
-                    hintText: 'Ex.: Inglês, programação, violão…',
+                Semantics(
+                  identifier: 'bttr.skills.name',
+                  child: TextFormField(
+                    controller: _name,
+                    validator: (value) => Validation.name(value, max: 120),
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome da habilidade',
+                      hintText: 'Ex.: Inglês, programação, violão…',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                TextFormField(
-                  controller: _daily,
-                  validator: Validation.minutes,
-                  keyboardType: TextInputType.number,
-                  onFieldSubmitted: (_) => _save(),
-                  decoration: const InputDecoration(
-                    labelText: 'Meta diária em minutos',
-                    helperText:
-                        'Tempo que você deseja dedicar em cada dia útil.',
+                Semantics(
+                  identifier: 'bttr.skills.daily',
+                  child: TextFormField(
+                    controller: _daily,
+                    validator: Validation.minutes,
+                    keyboardType: TextInputType.number,
+                    onFieldSubmitted: (_) => _save(),
+                    decoration: const InputDecoration(
+                      labelText: 'Meta diária em minutos',
+                      helperText:
+                          'Tempo que você deseja dedicar em cada dia útil.',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -118,6 +124,7 @@ class _SkillFormPageState extends State<SkillFormPage> {
                   label: widget.id == null
                       ? 'Criar habilidade'
                       : 'Salvar alterações',
+                  identifier: widget.id == null ? 'bttr.skills.create' : null,
                   icon: Icons.check,
                   onPressed: _save,
                   busy: state.busy,

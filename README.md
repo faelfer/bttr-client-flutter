@@ -141,12 +141,97 @@ Token na chave `bttr.token`, via Keychain no iOS e armazenamento criptografado n
 ## Verificação
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
-flutter analyze
-flutter test --coverage
+./scripts/quality.sh dependencies
+./scripts/quality.sh dart-format-check
+./scripts/quality.sh dart-lint
+./scripts/quality.sh kotlin-check
+./scripts/quality.sh swift-format-check
+./scripts/quality.sh swift-lint
+./scripts/quality.sh test
+./scripts/quality.sh test-ci
 ```
 
-Testes cobrem métodos, caminhos e payloads de todos os endpoints; sessão/401; validações; estatísticas; concorrência no BLoC; fluxos das telas e layouts de celular/tablet. Mocks existem apenas em `test/support`. Esses testes **não executam o backend real nem o envio de e-mail**. Cobertura: `coverage/lcov.info`.
+O projeto usa `flutter_lints` com `flutter analyze`, `dart format` (largura de 80
+colunas), ktlint para Kotlin e scripts Gradle, `swift-format` e SwiftLint para
+Swift. Para aplicar a formatação, execute `./scripts/quality.sh dart-format`,
+`./scripts/quality.sh kotlin-format` ou `./scripts/quality.sh swift-format`.
+O ktlint é resolvido pelo Gradle; para as verificações Swift locais são
+necessários `swift format` (Swift 6+) e `swiftlint` no `PATH`.
+
+O [Jenkinsfile](Jenkinsfile) segue o padrão do cliente Angular: checkout
+explícito, gatilhos e status de commit no GitLab, verificações separadas e
+artefato de cobertura. O agente precisa de Docker CLI, Compose v2 e acesso ao
+daemon; o Jenkins precisa dos plugins GitLab e JUnit usados pelo cliente
+Angular, além do Coverage para publicar LCOV. O
+[Compose de CI](compose.ci.yaml) executa Flutter 3.41.9,
+Swift 6.3.3 e SwiftLint 0.65.0 em contêineres. Se o agente Jenkins também
+estiver em um contêiner, configure `CI_HOST_JENKINS_HOME` com o caminho de
+`JENKINS_HOME` no host, como no cliente Angular. Para reproduzir uma etapa
+localmente, execute, por exemplo:
+
+```bash
+./scripts/jenkins-compose.sh flutter ./scripts/quality.sh dart-lint
+```
+
+`flutter_test` executa os testes unitários e de widgets. `bloc_test` verifica as
+transições de estado dos BLoCs, e `mocktail` isola o repositório de autenticação
+nos testes da sessão. A etapa `test-ci` produz cobertura em
+`coverage/lcov.info` e converte a saída `--machine` com `junitify` para
+`test-results/TEST-flutter.xml`; o Jenkins publica ambos os relatórios. A etapa
+preserva a falha de `flutter test` mesmo quando o relatório é gerado. A etapa
+`Coverage` exige no mínimo 90% de cobertura de linhas (a suíte atual mede
+aproximadamente 94,7%).
+
+Testes cobrem métodos, caminhos e payloads de todos os endpoints; sessão/401;
+validações; estatísticas; concorrência no BLoC; fluxos das telas e layouts de
+celular/tablet. Mocks existem apenas em `test/`. Esses testes **não executam o
+backend real nem o envio de e-mail**.
+
+### Testes E2E mobile com Appium
+
+O projeto usa **Appium 3.7.0**, **UiAutomator2 8.7.0** para Android e
+**XCUITest 12.13.2** para iOS. Os testes em `e2e/` dirigem os aplicativos
+Flutter compilados pelos controles nativos de acessibilidade. Cobrem login,
+logout e criação de habilidade contra o WireMock do `bttr-server`, com
+verificação do payload recebido pelo backend mock. O relatório JUnit, logs do
+Appium e capturas de falha ficam em `test-results/`.
+
+Para executar localmente, instale Node.js 24+, Flutter 3.41.9, Docker com
+Compose v2 e mantenha `../bttr-server/mock-api` disponível. Android requer
+SDK/JDK e um emulador já iniciado; iOS requer macOS, Xcode, CocoaPods e um
+simulador já iniciado. O script instala as dependências com `npm ci`, instala
+o driver Appium da plataforma, sobe o mock, compila o app com a URL correta,
+executa os testes e encerra os processos. A porta local do mock é 18080;
+configure `BTTR_MOCK_API_PORT` se estiver ocupada. Para selecionar um
+dispositivo específico, defina `E2E_ANDROID_UDID` ou `E2E_IOS_UDID`.
+
+O emulador Android precisa de uma imagem **`google_apis`** (build `userdebug`).
+Imagens `google_apis_playstore` são builds `user` e não registram a activity
+de lançamento de apps instalados por `adb`: o Appium falha ao iniciar o helper
+`io.appium.settings` com o erro enganoso `Activity class does not exist`. O
+script verifica `ro.build.type` e aborta com essa orientação. Para criar o AVD:
+
+```bash
+sdkmanager 'system-images;android-36;google_apis;arm64-v8a'
+avdmanager create avd -n e2e-api36 \
+  -k 'system-images;android-36;google_apis;arm64-v8a' -d pixel_7
+```
+
+```bash
+./scripts/appium-e2e-ci.sh android
+# Somente local; o CI não executa E2E em iOS
+./scripts/appium-e2e-ci.sh ios
+```
+
+O Jenkins executa E2E apenas no Android, na etapa **Appium Android E2E**, com
+status GitLab próprio e publicação JUnit. A execução em iOS fica disponível
+somente localmente. Configure um agente com label `android-e2e` (Linux ou
+macOS, Android SDK e emulador iniciado), com Node.js 24+, Flutter 3.41.9 e
+acesso ao daemon Docker. A etapa faz checkout de `bttr-server` na branch
+definida pelos parâmetros `BTTR_SERVER_REPOSITORY` e `BTTR_SERVER_BRANCH`,
+como no pipeline Angular. Ela exige um agente com dispositivo disponível; a
+instalação de pacotes npm e drivers Appium também requer acesso ao registro
+npm no agente.
 
 ## Builds mobile
 

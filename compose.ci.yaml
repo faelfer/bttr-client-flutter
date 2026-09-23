@@ -1,0 +1,34 @@
+x-ci-service: &ci-service
+  init: true
+  working_dir: /workspace
+  user: '${CI_UID:-1000}:${CI_GID:-1000}'
+  environment:
+    CI: 'true'
+    HOME: /tmp
+    PUB_CACHE: /workspace/.pub-cache
+    GRADLE_USER_HOME: /workspace/.gradle-cache
+    XDG_CACHE_HOME: /workspace/.cache
+    CI_UID: '${CI_UID:-1000}'
+    CI_GID: '${CI_GID:-1000}'
+  volumes:
+    - type: bind
+      source: ${CI_WORKSPACE:-.}
+      target: /workspace
+
+services:
+  flutter:
+    <<: *ci-service
+    image: ghcr.io/cirruslabs/flutter:3.41.9
+    # This image keeps its Flutter SDK under /root and writes to its SDK cache.
+    user: '0:0'
+    entrypoint: [sh]
+
+  swift-format:
+    <<: *ci-service
+    image: swift:6.3.3-bookworm
+    entrypoint: [sh]
+
+  swiftlint:
+    <<: *ci-service
+    image: ghcr.io/realm/swiftlint:0.65.0
+    entrypoint: [sh]

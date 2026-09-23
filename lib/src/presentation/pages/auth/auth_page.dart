@@ -149,22 +149,26 @@ class _AuthPageState extends State<AuthPage> {
                                   ),
                                   const SizedBox(height: 22),
                                 ],
-                                TextFormField(
-                                  controller: _email,
-                                  validator: Validation.email,
-                                  keyboardType: TextInputType.emailAddress,
-                                  autofillHints: const [AutofillHints.email],
-                                  autocorrect: false,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'E-mail',
-                                    hintText: 'voce@exemplo.com',
+                                Semantics(
+                                  identifier: 'bttr.auth.email',
+                                  child: TextFormField(
+                                    controller: _email,
+                                    validator: Validation.email,
+                                    keyboardType: TextInputType.emailAddress,
+                                    autofillHints: const [AutofillHints.email],
+                                    autocorrect: false,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: const InputDecoration(
+                                      labelText: 'E-mail',
+                                      hintText: 'voce@exemplo.com',
+                                    ),
                                   ),
                                 ),
                                 if (widget.mode != AuthMode.forgot) ...[
                                   const SizedBox(height: 22),
                                   PasswordField(
                                     controller: _password,
+                                    identifier: 'bttr.auth.password',
                                     label: 'Senha',
                                     isNew: signUp,
                                     validator: (value) => Validation.password(
@@ -196,6 +200,9 @@ class _AuthPageState extends State<AuthPage> {
                                 const SizedBox(height: 20),
                                 PrimaryButton(
                                   label: submitLabel,
+                                  identifier: signIn
+                                      ? 'bttr.auth.signIn'
+                                      : null,
                                   onPressed: _submit,
                                   busy: state.busy,
                                 ),

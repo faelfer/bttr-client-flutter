@@ -43,6 +43,7 @@ class _SkillsPageState extends State<SkillsPage> {
         subtitle: 'O que você quer fazer um pouco melhor hoje?',
         action: PrimaryButton(
           label: 'Nova habilidade',
+          identifier: 'bttr.skills.new',
           icon: Icons.add,
           onPressed: () => context.go('/skills/create'),
         ),

@@ -33,11 +33,14 @@ class AppShell extends StatelessWidget {
           title: const Brand(),
           toolbarHeight: 76,
           actions: [
-            IconButton(
-              tooltip: 'Sair da conta',
-              onPressed: () =>
-                  context.read<SessionBloc>().add(SignOutRequested()),
-              icon: const Icon(Icons.logout_rounded),
+            Semantics(
+              identifier: 'bttr.auth.signOut',
+              child: IconButton(
+                tooltip: 'Sair da conta',
+                onPressed: () =>
+                    context.read<SessionBloc>().add(SignOutRequested()),
+                icon: const Icon(Icons.logout_rounded),
+              ),
             ),
             const SizedBox(width: 8),
           ],

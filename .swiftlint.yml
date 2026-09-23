@@ -1,0 +1,9 @@
+included:
+  - ios/Runner
+  - ios/RunnerTests
+
+excluded:
+  - ios/Runner/GeneratedPluginRegistrant.swift
+
+strict: true
+allow_zero_lintable_files: false

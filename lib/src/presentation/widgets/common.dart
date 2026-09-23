@@ -183,24 +183,29 @@ class PrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.busy = false,
     this.icon = Icons.arrow_forward,
+    this.identifier,
   });
   final String label;
   final VoidCallback? onPressed;
   final bool busy;
   final IconData icon;
+  final String? identifier;
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: double.infinity,
-    child: FilledButton.icon(
-      onPressed: busy ? null : onPressed,
-      icon: busy
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(icon, size: 20),
-      label: Text(label, textAlign: TextAlign.center),
+  Widget build(BuildContext context) => Semantics(
+    identifier: identifier,
+    child: SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: busy ? null : onPressed,
+        icon: busy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(icon, size: 20),
+        label: Text(label, textAlign: TextAlign.center),
+      ),
     ),
   );
 }
@@ -338,12 +343,14 @@ class PasswordField extends StatefulWidget {
     required this.validator,
     this.isNew = false,
     this.onSubmitted,
+    this.identifier,
   });
   final TextEditingController controller;
   final String label;
   final String? Function(String?) validator;
   final bool isNew;
   final VoidCallback? onSubmitted;
+  final String? identifier;
   @override
   State<PasswordField> createState() => _PasswordFieldState();
 }
@@ -351,25 +358,28 @@ class PasswordField extends StatefulWidget {
 class _PasswordFieldState extends State<PasswordField> {
   bool hidden = true;
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: widget.controller,
-    obscureText: hidden,
-    autocorrect: false,
-    enableSuggestions: false,
-    validator: widget.validator,
-    autofillHints: [
-      widget.isNew ? AutofillHints.newPassword : AutofillHints.password,
-    ],
-    onFieldSubmitted: (_) => widget.onSubmitted?.call(),
-    decoration: InputDecoration(
-      labelText: widget.label,
-      suffixIcon: IconButton(
-        tooltip: hidden
-            ? 'Mostrar ${widget.label.toLowerCase()}'
-            : 'Ocultar ${widget.label.toLowerCase()}',
-        onPressed: () => setState(() => hidden = !hidden),
-        icon: Icon(
-          hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+  Widget build(BuildContext context) => Semantics(
+    identifier: widget.identifier,
+    child: TextFormField(
+      controller: widget.controller,
+      obscureText: hidden,
+      autocorrect: false,
+      enableSuggestions: false,
+      validator: widget.validator,
+      autofillHints: [
+        widget.isNew ? AutofillHints.newPassword : AutofillHints.password,
+      ],
+      onFieldSubmitted: (_) => widget.onSubmitted?.call(),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        suffixIcon: IconButton(
+          tooltip: hidden
+              ? 'Mostrar ${widget.label.toLowerCase()}'
+              : 'Ocultar ${widget.label.toLowerCase()}',
+          onPressed: () => setState(() => hidden = !hidden),
+          icon: Icon(
+            hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          ),
         ),
       ),
     ),

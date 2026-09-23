@@ -46,7 +46,11 @@ void main() {
   }
 
   testWidgets('login valida campos, autentica e permite sair', (tester) async {
+    final semantics = tester.ensureSemantics();
     await mount(tester, authenticated: false, route: '/');
+    expect(find.bySemanticsIdentifier('bttr.auth.email'), findsOneWidget);
+    expect(find.bySemanticsIdentifier('bttr.auth.password'), findsOneWidget);
+    expect(find.bySemanticsIdentifier('bttr.auth.signIn'), findsOneWidget);
     await tap(tester, button('Entrar'));
     expect(find.text('Informe um e-mail válido.'), findsOneWidget);
     expect(backend.requests, isEmpty);
@@ -55,9 +59,12 @@ void main() {
     await tap(tester, button('Entrar'));
     expect(find.text('Minhas habilidades'), findsOneWidget);
     expect(find.text('Habilidade 1'), findsOneWidget);
+    expect(find.bySemanticsIdentifier('bttr.skills.new'), findsOneWidget);
+    expect(find.bySemanticsIdentifier('bttr.auth.signOut'), findsOneWidget);
     await tap(tester, find.byTooltip('Sair da conta'));
     expect(find.text('Bom ter você\nde volta.'), findsOneWidget);
     expect(backend.storage.value, isNull);
+    semantics.dispose();
   });
 
   testWidgets('rota protegida retorna às estatísticas após autenticar', (
@@ -94,8 +101,12 @@ void main() {
   testWidgets(
     'habilidade: criação, erro preserva edição, atualização e exclusão confirmada',
     (tester) async {
+      final semantics = tester.ensureSemantics();
       await mount(tester);
       await tap(tester, button('Nova habilidade'));
+      expect(find.bySemanticsIdentifier('bttr.skills.name'), findsOneWidget);
+      expect(find.bySemanticsIdentifier('bttr.skills.daily'), findsOneWidget);
+      expect(find.bySemanticsIdentifier('bttr.skills.create'), findsOneWidget);
       await enter(tester, 'Nome da habilidade', 'Violão');
       await enter(tester, 'Meta diária em minutos', '20');
       await tap(tester, button('Criar habilidade'));
@@ -122,6 +133,7 @@ void main() {
       expect(backend.skills.length, 1);
       expect(find.text('Violão clássico'), findsNothing);
       expect(find.text('Minhas habilidades'), findsOneWidget);
+      semantics.dispose();
     },
   );
 

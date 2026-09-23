@@ -1,3 +1,11 @@
+plugins {
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
+}
+
+ktlint {
+    version.set("1.8.0")
+}
+
 allprojects {
     repositories {
         google()
@@ -17,6 +25,12 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    if (name == "app") {
+        apply(plugin = "org.jlleitschuh.gradle.ktlint")
+        configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+            version.set("1.8.0")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

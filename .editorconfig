@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+ktlint_code_style = ktlint_official
+
+# Flutter's generated Android package id contains underscores.
+[android/app/src/main/kotlin/**/MainActivity.kt]
+ktlint_standard_package-name = disabled

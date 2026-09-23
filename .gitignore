@@ -29,9 +29,16 @@ migrate_working_dir/
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
+.gradle-cache/
+.cache/
 .pub/
+/android/.kotlin/
 /build/
 /coverage/
+/test-results/
+/node_modules/
+/.appium/
+/.ci/
 
 # Symbolication related
 app.*.symbols

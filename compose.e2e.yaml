@@ -1,0 +1,21 @@
+name: bttr-client-flutter-e2e
+
+services:
+  mock-api:
+    image: '${BTTR_MOCK_API_IMAGE:-bttr-server-mock:flutter-e2e}'
+    build:
+      context: ${BTTR_MOCK_API_CONTEXT:-../bttr-server/mock-api}
+    ports:
+      - '127.0.0.1:${BTTR_MOCK_API_PORT:-18080}:8080'
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          curl --fail --silent --show-error
+          http://localhost:8080/mock/health >/dev/null
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s

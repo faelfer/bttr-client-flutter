@@ -1,9 +1,25 @@
 import 'dart:async';
 import 'package:bttr_client_flutter/src/core/utils/app_exception.dart';
 import 'package:bttr_client_flutter/src/presentation/core/bloc/operation_bloc.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  blocTest<OperationBloc<int>, OperationState<int>>(
+    'carregamento emite ocupado e depois os dados recebidos',
+    build: OperationBloc<int>.new,
+    act: (bloc) => bloc.add(LoadRequested(() async => 42)),
+    expect: () => [
+      isA<OperationState<int>>()
+          .having((state) => state.busy, 'busy', isTrue)
+          .having((state) => state.loaded, 'loaded', isFalse),
+      isA<OperationState<int>>()
+          .having((state) => state.busy, 'busy', isFalse)
+          .having((state) => state.loaded, 'loaded', isTrue)
+          .having((state) => state.data, 'data', 42),
+    ],
+  );
+
   test(
     'bloqueia envios duplicados e mantém dados quando mutação falha',
     () async {
