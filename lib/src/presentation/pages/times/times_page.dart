@@ -43,6 +43,7 @@ class _TimesPageState extends State<TimesPage> {
         subtitle: 'Veja os pequenos passos que estão levando você adiante.',
         action: PrimaryButton(
           label: 'Registrar tempo',
+          identifier: 'bttr.times.new',
           icon: Icons.add,
           onPressed: () => context.go('/times/create'),
         ),

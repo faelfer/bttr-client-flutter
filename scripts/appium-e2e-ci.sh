@@ -112,6 +112,11 @@ docker compose -f compose.e2e.yaml up -d --build --wait mock-api
 curl --fail --silent --show-error "$BTTR_MOCK_API_URL/mock/health" >/dev/null
 
 npm ci --no-audit --no-fund
+# Os testes dos utilitários da suíte (fábricas e guardas de ambiente) não
+# precisam de dispositivo e custam milissegundos. Rodá-los antes de instalar o
+# driver e compilar o aplicativo troca uma falha no fim da etapa, depois de
+# minutos de build, por uma falha no começo.
+npm run test:e2e:helpers:ci
 installed_version=
 driver_manifest="$APPIUM_HOME/node_modules/$driver_package/package.json"
 if [ -f "$driver_manifest" ]; then

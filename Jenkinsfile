@@ -141,9 +141,9 @@ pipeline {
             post {
                 always {
                     junit allowEmptyResults: true,
-                        testResults: 'test-results/TEST-appium-android.xml'
+                        testResults: 'test-results/TEST-e2e-helpers.xml,test-results/TEST-appium-android.xml'
                     archiveArtifacts allowEmptyArchive: true,
-                        artifacts: 'test-results/appium-android*'
+                        artifacts: 'test-results/appium-android*,e2e/artifacts/**'
                 }
             }
         }

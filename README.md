@@ -191,10 +191,56 @@ backend real nem o envio de e-mail**.
 
 O projeto usa **Appium 3.7.0**, **UiAutomator2 8.7.0** para Android e
 **XCUITest 12.13.2** para iOS. Os testes em `e2e/` dirigem os aplicativos
-Flutter compilados pelos controles nativos de acessibilidade. Cobrem login,
-logout e criação de habilidade contra o WireMock do `bttr-server`, com
-verificação do payload recebido pelo backend mock. O relatório JUnit, logs do
-Appium e capturas de falha ficam em `test-results/`.
+Flutter compilados pelos controles nativos de acessibilidade, contra o WireMock
+do `bttr-server`. Cobrem acesso, cadastro, recuperação de senha, habilidades
+(criação, edição, exclusão e estatísticas), registros de tempo (criação, edição
+e exclusão) e conta (leitura, alteração, troca de senha e exclusão) — sempre
+conferindo o corpo que chegou ao backend mock, porque a resposta do mock é a
+mesma para qualquer payload. O relatório JUnit e os logs do Appium ficam em
+`test-results/`; vídeos, capturas e logs do dispositivo ficam em
+`e2e/artifacts/`.
+
+A suíte segue a organização do cliente React Native, com um diretório por
+responsabilidade:
+
+```text
+e2e/
+├── artifacts/    # vídeos, capturas e logs que a execução deixa (não versionados)
+├── customs/      # comandos sobre o dispositivo: tocar, preencher, rolar, conferir
+├── factories/    # massa de teste; __tests__/ cobre as próprias fábricas
+├── mocks/        # massa fixa, espelhando os estados dos cenários do WireMock
+├── preflight/    # guardas de ambiente e os root hooks do mocha
+├── scenarios/    # fluxos de tela reutilizáveis (acessar, criar habilidade, …)
+└── specs/        # os testes, um arquivo por área do aplicativo
+```
+
+Os specs não falam com o dispositivo: eles compõem cenários e conferem o
+resultado. Os cenários não conhecem seletor de plataforma: eles chamam customs.
+Só os customs sabem que Android e iOS expõem o mesmo `Semantics identifier` em
+atributos diferentes (`resource-id` e `accessibilityIdentifier`), e é por isso
+que a mesma suíte roda nas duas plataformas.
+
+Os identificadores vêm do aplicativo, no espaço `bttr.*` (`bttr.auth.email`,
+`bttr.skills.create`, `bttr.times.minutes`…). O que não tem identificador é
+alcançado pelo texto exibido — títulos, abas, botões de diálogo e itens vindos
+da API —, para não encher as telas de marcação de teste.
+
+O `e2e/preflight/hooks.js` é carregado com `--require` e concentra o preparo de
+cada teste: guarda de ambiente e sessão do Appium uma vez, reinício do cenário
+do mock e do aplicativo antes de cada teste, vídeo sempre e captura mais log do
+dispositivo quando o teste falha. As guardas são fail-closed: a suíte reinicia
+cenários e apaga o histórico de requisições, então ela recusa qualquer endereço
+de API que não seja local.
+
+As fábricas e as guardas têm testes próprios, que não precisam de dispositivo
+nem de Docker:
+
+```bash
+npm run test:e2e:helpers
+```
+
+Eles também rodam no início de `scripts/appium-e2e-ci.sh`, antes de instalar o
+driver e compilar o aplicativo.
 
 Para executar localmente, instale Node.js 24+, Flutter 3.41.9, Docker com
 Compose v2 e mantenha `../bttr-server/mock-api` disponível. Android requer

@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "minutes": 45,
+  "skill": {
+    "id": 1,
+    "name": "Java",
+    "daily": 30
+  }
+}

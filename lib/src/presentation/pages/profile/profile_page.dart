@@ -92,29 +92,36 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _name,
-                      validator: Validation.name,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      autofillHints: const [AutofillHints.username],
-                      decoration: const InputDecoration(
-                        labelText: 'Nome de usuário',
+                    Semantics(
+                      identifier: 'bttr.profile.username',
+                      child: TextFormField(
+                        controller: _name,
+                        validator: Validation.name,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        autofillHints: const [AutofillHints.username],
+                        decoration: const InputDecoration(
+                          labelText: 'Nome de usuário',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _email,
-                      validator: Validation.email,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'E-mail'),
-                      onFieldSubmitted: (_) => _save(),
+                    Semantics(
+                      identifier: 'bttr.profile.email',
+                      child: TextFormField(
+                        controller: _email,
+                        validator: Validation.email,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(labelText: 'E-mail'),
+                        onFieldSubmitted: (_) => _save(),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     PrimaryButton(
                       label: 'Salvar alterações',
+                      identifier: 'bttr.profile.save',
                       icon: Icons.check,
                       onPressed: _save,
                       busy: state.busy,
@@ -158,13 +165,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     'Sua conta, habilidades e registros de tempo serão apagados permanentemente.',
                   ),
                   const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: state.busy ? null : _delete,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
+                  Semantics(
+                    identifier: 'bttr.profile.delete',
+                    child: OutlinedButton.icon(
+                      onPressed: state.busy ? null : _delete,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Excluir minha conta'),
                     ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Excluir minha conta'),
                   ),
                 ],
               ),

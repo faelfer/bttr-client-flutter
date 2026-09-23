@@ -37,6 +37,9 @@ migrate_working_dir/
 /coverage/
 /test-results/
 /node_modules/
+# Vídeos, capturas e logs que a execução E2E deixa; a pasta é versionada vazia.
+/e2e/artifacts/*
+!/e2e/artifacts/.gitkeep
 /.appium/
 /.ci/
 

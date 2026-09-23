@@ -1,9 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- enableOnBackInvokedCallback: o aplicativo trata o botão voltar por conta
+         própria, no PopScope do AppShell, que decide o destino conforme a rota
+         (formulário de tempo volta ao histórico, troca de senha volta ao perfil).
+         A partir do Android 15 o sistema liga o predictive back por padrão, e
+         nele o voltar sai do aplicativo sem passar pelo PopScope: em um emulador
+         com API 36 o voltar no formulário de habilidade ia para o launcher.
+         O teste de widget não pega isso, porque ele dispara o popRoute direto no
+         framework — justamente a etapa que o sistema deixa de fazer. -->
     <application
         android:label="Bttr"
         android:allowBackup="false"
         android:name="${applicationName}"
+        android:enableOnBackInvokedCallback="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

@@ -39,6 +39,11 @@ class _AuthPageState extends State<AuthPage> {
       : signUp
       ? 'Criar minha conta'
       : 'Enviar link de recuperação';
+  String get submitIdentifier => signIn
+      ? 'bttr.auth.signIn'
+      : signUp
+      ? 'bttr.auth.signUp'
+      : 'bttr.auth.forgotPassword';
 
   void _submit() {
     if (_bloc.state.busy || !_form.currentState!.validate()) return;
@@ -133,18 +138,21 @@ class _AuthPageState extends State<AuthPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 if (signUp) ...[
-                                  TextFormField(
-                                    controller: _name,
-                                    validator: Validation.name,
-                                    textCapitalization:
-                                        TextCapitalization.words,
-                                    autofillHints: const [
-                                      AutofillHints.username,
-                                    ],
-                                    textInputAction: TextInputAction.next,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nome de usuário',
-                                      hintText: 'Como podemos chamar você?',
+                                  Semantics(
+                                    identifier: 'bttr.auth.username',
+                                    child: TextFormField(
+                                      controller: _name,
+                                      validator: Validation.name,
+                                      textCapitalization:
+                                          TextCapitalization.words,
+                                      autofillHints: const [
+                                        AutofillHints.username,
+                                      ],
+                                      textInputAction: TextInputAction.next,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Nome de usuário',
+                                        hintText: 'Como podemos chamar você?',
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 22),
@@ -200,9 +208,7 @@ class _AuthPageState extends State<AuthPage> {
                                 const SizedBox(height: 20),
                                 PrimaryButton(
                                   label: submitLabel,
-                                  identifier: signIn
-                                      ? 'bttr.auth.signIn'
-                                      : null,
+                                  identifier: submitIdentifier,
                                   onPressed: _submit,
                                   busy: state.busy,
                                 ),

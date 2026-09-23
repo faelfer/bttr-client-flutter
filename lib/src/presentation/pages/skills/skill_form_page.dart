@@ -124,7 +124,9 @@ class _SkillFormPageState extends State<SkillFormPage> {
                   label: widget.id == null
                       ? 'Criar habilidade'
                       : 'Salvar alterações',
-                  identifier: widget.id == null ? 'bttr.skills.create' : null,
+                  identifier: widget.id == null
+                      ? 'bttr.skills.create'
+                      : 'bttr.skills.save',
                   icon: Icons.check,
                   onPressed: _save,
                   busy: state.busy,
@@ -135,13 +137,16 @@ class _SkillFormPageState extends State<SkillFormPage> {
                 ),
                 if (widget.id != null) ...[
                   const Divider(),
-                  TextButton.icon(
-                    onPressed: state.busy ? null : _delete,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
+                  Semantics(
+                    identifier: 'bttr.skills.delete',
+                    child: TextButton.icon(
+                      onPressed: state.busy ? null : _delete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Excluir habilidade'),
                     ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Excluir habilidade'),
                   ),
                 ],
               ],

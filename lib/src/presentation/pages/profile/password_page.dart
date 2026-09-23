@@ -62,12 +62,14 @@ class _PasswordPageState extends State<PasswordPage> {
               children: [
                 PasswordField(
                   controller: _current,
+                  identifier: 'bttr.password.current',
                   label: 'Senha atual',
                   validator: Validation.password,
                 ),
                 const SizedBox(height: 24),
                 PasswordField(
                   controller: _next,
+                  identifier: 'bttr.password.next',
                   label: 'Nova senha',
                   isNew: true,
                   validator: (value) => Validation.password(value, isNew: true),
@@ -80,6 +82,7 @@ class _PasswordPageState extends State<PasswordPage> {
                 const SizedBox(height: 24),
                 PasswordField(
                   controller: _confirmation,
+                  identifier: 'bttr.password.confirmation',
                   label: 'Confirmar nova senha',
                   isNew: true,
                   validator: (value) => value == null || value.isEmpty
@@ -92,6 +95,7 @@ class _PasswordPageState extends State<PasswordPage> {
                 const SizedBox(height: 24),
                 PrimaryButton(
                   label: 'Salvar nova senha',
+                  identifier: 'bttr.password.save',
                   icon: Icons.check,
                   onPressed: _save,
                   busy: state.busy,

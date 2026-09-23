@@ -104,36 +104,46 @@ class _TimeFormPageState extends State<TimeFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _skillId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Habilidade'),
-                    hint: const Text('Selecione uma habilidade'),
-                    items: data.skills
-                        .map(
-                          (skill) => DropdownMenuItem(
-                            value: skill.id,
-                            child: Text(
-                              skill.name,
-                              overflow: TextOverflow.ellipsis,
+                  Semantics(
+                    identifier: 'bttr.times.skill',
+                    child: DropdownButtonFormField<int>(
+                      initialValue: _skillId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Habilidade',
+                      ),
+                      hint: const Text('Selecione uma habilidade'),
+                      items: data.skills
+                          .map(
+                            (skill) => DropdownMenuItem(
+                              value: skill.id,
+                              child: Text(
+                                skill.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: state.busy ? null : (value) => _skillId = value,
-                    validator: (value) =>
-                        value == null ? 'Selecione uma habilidade.' : null,
+                          )
+                          .toList(),
+                      onChanged: state.busy
+                          ? null
+                          : (value) => _skillId = value,
+                      validator: (value) =>
+                          value == null ? 'Selecione uma habilidade.' : null,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _minutes,
-                    validator: Validation.minutes,
-                    keyboardType: TextInputType.number,
-                    onFieldSubmitted: (_) => _save(),
-                    decoration: const InputDecoration(
-                      labelText: 'Tempo dedicado em minutos',
-                      helperText:
-                          'O registro usa a data atual. A edição preserva a data original.',
+                  Semantics(
+                    identifier: 'bttr.times.minutes',
+                    child: TextFormField(
+                      controller: _minutes,
+                      validator: Validation.minutes,
+                      keyboardType: TextInputType.number,
+                      onFieldSubmitted: (_) => _save(),
+                      decoration: const InputDecoration(
+                        labelText: 'Tempo dedicado em minutos',
+                        helperText:
+                            'O registro usa a data atual. A edição preserva a data original.',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -141,6 +151,9 @@ class _TimeFormPageState extends State<TimeFormPage> {
                     label: widget.id == null
                         ? 'Registrar tempo'
                         : 'Salvar alterações',
+                    identifier: widget.id == null
+                        ? 'bttr.times.create'
+                        : 'bttr.times.save',
                     icon: Icons.check,
                     onPressed: _save,
                     busy: state.busy,
@@ -151,13 +164,16 @@ class _TimeFormPageState extends State<TimeFormPage> {
                   ),
                   if (widget.id != null) ...[
                     const Divider(),
-                    TextButton.icon(
-                      onPressed: state.busy ? null : _delete,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error,
+                    Semantics(
+                      identifier: 'bttr.times.delete',
+                      child: TextButton.icon(
+                        onPressed: state.busy ? null : _delete,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Excluir registro'),
                       ),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Excluir registro'),
                     ),
                   ],
                 ],
