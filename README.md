@@ -1,0 +1,168 @@
+# Bttr Client Flutter
+
+Aplicativo **exclusivamente mobile, para Android e iOS**, para acompanhar habilidades e tempo de prática. Interface em português, adaptada a celulares e tablets, com a paleta verde, os textos e os fluxos do `bttr-client-angular`.
+
+
+## Executar
+
+Ambiente utilizado: **Flutter 3.41.9 / Dart 3.11.5**. Android requer SDK/JDK configurados; iOS requer macOS, Xcode e CocoaPods. Verifique `flutter doctor` e `flutter devices`.
+
+```bash
+cd bttr-client-flutter
+flutter pub get
+
+# iOS Simulator: API no localhost do Mac
+flutter run -d <id-do-simulador-ios> --dart-define=FLUTTER_ENV=dev
+
+# Android Emulator: 10.0.2.2 aponta para a máquina host
+flutter run -d <id-do-emulador-android> \
+  --dart-define=FLUTTER_ENV=dev \
+  --dart-define=API_URL=http://10.0.2.2:8000
+```
+
+Inicie o backend conforme `../bttr-server/README.md`. O aplicativo acessa diretamente a API na porta 8000: **não utiliza o proxy `/api` do Angular**. Para aparelho físico, configure uma URL HTTPS acessível pelo dispositivo, ou um endereço local durante o desenvolvimento. HTTP no Android está habilitado somente em debug. No iOS, há permissão de rede local e exceção ATS de rede local, sem liberação global de HTTP.
+
+`.vscode/launch.json` inclui DEV para cada simulador, QA e PROD. Selecione um dispositivo Android/iOS antes de executar. Não há plataforma web.
+
+## Ambientes
+
+| `FLUTTER_ENV` | Arquivo | Comportamento |
+| --- | --- | --- |
+| `dev`, `development` | `env/.env.dev` | API local e faixa DEV |
+| `qa`, `staging`, `homolog` | `env/.env.qa` | HTTPS e faixa QA |
+| `prod`, `production` ou omitido | `env/.env` | HTTPS, sem faixa |
+
+`--dart-define=API_URL=...` prevalece sobre o arquivo do ambiente. As URLs de QA e produção estão vazias: os projetos de referência não informam os servidores. Configure uma URL real antes de executar nesses ambientes. Sem configuração válida, o aplicativo exibe uma mensagem de inicialização.
+
+```bash
+flutter run --dart-define=FLUTTER_ENV=qa \
+  --dart-define=API_URL=https://sua-api-qa.exemplo.com
+```
+
+Os `.env` são assets públicos incluídos no aplicativo. Não coloque segredos, senhas ou tokens neles.
+
+## Arquitetura
+
+```text
+lib/
+├── main.dart                       # Inicialização
+└── src/
+    ├── app.dart                    # Composição do aplicativo
+    ├── core/
+    │   ├── config/                 # Ambientes e injeção de dependências
+    │   ├── enums/                  # Environment
+    │   └── utils/                  # Erros e formatação
+    ├── data/
+    │   ├── datasources/            # HTTP e armazenamento seguro
+    │   ├── models/                 # Conversão de JSON
+    │   └── repositories/           # Implementações dos contratos
+    ├── domain/
+    │   ├── entities/               # Usuário, habilidade, tempo, estatísticas
+    │   ├── repositories/           # Interfaces dos repositórios
+    │   └── usecases/               # Validações, operações e cálculos
+    └── presentation/
+        ├── core/
+        │   ├── bloc/              # Eventos, estados e processamento
+        │   ├── design/            # Tema e cores BTTR
+        │   └── routes/            # Rotas protegidas
+        ├── pages/
+        │   ├── auth/bloc/         # BLoC de sessão
+        │   ├── skills/            # Lista, formulário e estatísticas
+        │   ├── times/             # Histórico e formulário
+        │   └── profile/           # Perfil e senha
+        └── widgets/               # Navegação e componentes compartilhados
+env/                               # .env, .env.dev e .env.qa
+android/
+ios/
+test/
+```
+
+O domínio usa Dart puro e não depende de Flutter, HTTP ou armazenamento. Os repositórios convertem respostas da API para entidades; os casos de uso validam os dados e aplicam as regras. `Dependencies` é a raiz de composição e permite substituir implementações nos testes.
+
+O `OperationBloc<T>` separa eventos (`LoadRequested`, `MutationRequested`), estados e ciclo assíncrono compartilhado. Bloqueia envios duplicados, mantém dados do formulário após erro e permite repetir leituras. `SessionBloc` acompanha entrada/saída e atualiza as guardas. As páginas não calculam metas nem montam payloads HTTP.
+
+Dependências: `flutter_bloc`, `flutter_dotenv`, `flutter_secure_storage`, `http`, `go_router`, `intl` e localização oficial do Flutter. Fontes e ícones nativos evitam downloads em execução. Shared Preferences não é necessário: o único dado persistido é o token, no armazenamento seguro.
+
+## Funcionalidades
+
+| Fluxo | Rotas internas | Comportamento |
+| --- | --- | --- |
+| Autenticação | `/`, `/sign-up`, `/forgot-password` | Login, cadastro e link de recuperação |
+| Habilidades | `/home`, `/skills/create`, `/skills/:id/update` | Lista paginada e CRUD |
+| Estatísticas | `/skills/:id/statistic` | Meta mensal, acumulado, atraso, percentual e sugestão |
+| Tempos | `/times`, `/times/create`, `/times/:id/update` | Histórico paginado e CRUD |
+| Conta | `/profile`, `/redefine-password` | Consulta, edição, exclusão e troca de senha |
+
+Navegação inferior, botão voltar do Android e links de retorno; cards adaptados ao toque e a tablets; campos rotulados, visibilidade de senha, autofill e texto ampliado. Exclusões exigem confirmação com descrição dos dados afetados. Mensagens de sucesso, erro, carregamento e estados vazios.
+
+## Regras preservadas
+
+- Meta diária e duração: inteiros de **1 a 1440**, enviados como números.
+- Nome de usuário: 2–100 caracteres; habilidade: 2–120; e-mail: até 254.
+- Senhas novas: 4–128 caracteres, com maiúscula, minúscula, número e símbolo. Login não impõe composição nova à senha existente. Troca de senha exige confirmação coincidente.
+- Listas: cinco itens por página, índices a partir de 1. URLs `next`/`previous` não são seguidas; consultas continuam na API configurada.
+- Estatísticas: mês atual no fuso local, do primeiro instante ao último milissegundo, convertido para UTC/ISO-8601 na consulta.
+- Dias úteis: segunda a sexta, sem feriados. Sugestão inclui hoje quando útil, arredonda para cima e evita divisão por zero e valores negativos.
+- Percentuais podem superar 100%; a barra visual para em 100%.
+- A data do registro vem do servidor e não é enviada nas mutações.
+- Registrar tempo nas estatísticas pré-seleciona a habilidade, validada contra a lista disponível.
+- Criações, edições e exclusões retornam à lista recarregada. Erros de mutação preservam o formulário.
+
+## Contrato HTTP
+
+| Método | Endpoint | Payload / parâmetros |
+| --- | --- | --- |
+| POST | `/users/sign_in` | `{email,password}` → `{token,user,message}` |
+| POST | `/users/sign_up` | `{username,email,password}` |
+| POST | `/users/forgot_password` | `{email}` |
+| GET / PATCH / DELETE | `/users/profile` | GET → `{user}`; PATCH `{username,email}` |
+| POST | `/users/redefine_password` | `{password,new_password}` |
+| GET | `/skills/skills_from_user` | `{skills}` |
+| GET | `/skills/skills_by_page` | `page` |
+| GET | `/skills/skill_by_id/:id` | `{skill}` |
+| POST | `/skills/create_skill` | `{name,daily}` |
+| PUT | `/skills/update_skill_by_id/:id` | `{name,daily}` |
+| DELETE | `/skills/delete_skill_by_id/:id` | Sem corpo |
+| GET | `/times/times_by_page` | `page` |
+| GET | `/times/times_by_date` | `skill_id`, `date_initial`, `date_final` → `{times}` |
+| GET | `/times/time_by_id/:id` | `{time}` |
+| POST | `/times/create_time` | `{skill_id,minutes}` |
+| PUT | `/times/update_time_by_id/:id` | `{skill_id,minutes}` |
+| DELETE | `/times/delete_time_by_id/:id` | Sem corpo |
+
+Mutações retornam `{message}`; listas usam `{count,next,previous,results}`. A recuperação depende do serviço de e-mail do backend. A redefinição pelo link segue o fluxo do servidor, como no Angular.
+
+## Sessão
+
+Token na chave `bttr.token`, via Keychain no iOS e armazenamento criptografado no Android. Restauração antes da primeira tela; se o armazenamento estiver indisponível, a sessão funciona em memória. Backups Android estão desabilitados para evitar restauração de tokens sem a chave original.
+
+`Authorization: Token <token>` é enviado apenas nas chamadas privadas à API configurada. Login, cadastro e recuperação nunca o recebem. Redirecionamentos HTTP estão desabilitados. Um 401 privado encerra a sessão e preserva o destino interno válido para o login; um 401 atrasado de outra sessão não apaga um token novo. Não há renovação de token no contrato.
+
+## Verificação
+
+```bash
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test --coverage
+```
+
+Testes cobrem métodos, caminhos e payloads de todos os endpoints; sessão/401; validações; estatísticas; concorrência no BLoC; fluxos das telas e layouts de celular/tablet. Mocks existem apenas em `test/support`. Esses testes **não executam o backend real nem o envio de e-mail**. Cobertura: `coverage/lcov.info`.
+
+## Builds mobile
+
+```bash
+# Android de desenvolvimento
+flutter build apk --debug --dart-define=FLUTTER_ENV=dev \
+  --dart-define=API_URL=http://10.0.2.2:8000
+
+# iOS Simulator, sem assinatura de distribuição
+flutter build ios --simulator --debug --dart-define=FLUTTER_ENV=dev
+
+# Produção: configure assinatura e URL antes de distribuir
+flutter build appbundle --release --dart-define=FLUTTER_ENV=prod \
+  --dart-define=API_URL=https://sua-api.exemplo.com
+flutter build ipa --release --dart-define=FLUTTER_ENV=prod \
+  --dart-define=API_URL=https://sua-api.exemplo.com
+```
+
+Identificadores: Android `com.bttr.bttr_client_flutter`; iOS `com.bttr.bttrClientFlutter`. Confirme-os antes de publicar. Configure a assinatura Android e equipe/provisionamento Apple; a configuração inicial Android usa a chave de debug do template Flutter e **não serve para distribuição**. Nenhum certificado pessoal ou credencial dos projetos de referência foi incorporado. Deploy em lojas e Fastlane não foram configurados, pois exigem dados das contas de distribuição.

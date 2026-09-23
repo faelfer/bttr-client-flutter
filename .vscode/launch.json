@@ -1,0 +1,9 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    { "name": "DEV · iOS Simulator", "request": "launch", "type": "dart", "args": ["--dart-define=FLUTTER_ENV=dev"] },
+    { "name": "DEV · Android Emulator", "request": "launch", "type": "dart", "args": ["--dart-define=FLUTTER_ENV=dev", "--dart-define=API_URL=http://10.0.2.2:8000"] },
+    { "name": "QA", "request": "launch", "type": "dart", "args": ["--dart-define=FLUTTER_ENV=qa"] },
+    { "name": "PROD", "request": "launch", "type": "dart", "args": ["--dart-define=FLUTTER_ENV=prod"] }
+  ]
+}
