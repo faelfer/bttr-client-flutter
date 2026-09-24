@@ -18,9 +18,10 @@ x-ci-service: &ci-service
 services:
   flutter:
     <<: *ci-service
-    image: ghcr.io/cirruslabs/flutter:3.41.9
-    # This image keeps its Flutter SDK under /root and writes to its SDK cache.
-    user: '0:0'
+    build:
+      context: .
+      dockerfile: Dockerfile.flutter-ci
+    image: bttr-client-flutter-ci:3.41.9
     entrypoint: [sh]
 
   android-e2e:
@@ -32,14 +33,15 @@ services:
     # Appium, Flutter and the headless emulator share this container. Host
     # networking makes the mock published on 127.0.0.1 visible through the
     # emulator's 10.0.2.2 host alias.
-    user: '0:0'
     network_mode: host
     shm_size: 2gb
     devices:
       - /dev/kvm:/dev/kvm
+    group_add:
+      - '${KVM_GID:-0}'
     environment:
       CI: 'true'
-      HOME: /root
+      HOME: /tmp
       PUB_CACHE: /workspace/.pub-cache
       GRADLE_USER_HOME: /workspace/.gradle-cache
       XDG_CACHE_HOME: /workspace/.cache

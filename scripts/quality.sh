@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-# The Flutter image runs as root because its SDK cache is root-owned. Give
-# generated workspace files back to the Jenkins user before the container exits.
+# Compatibility fallback for callers that explicitly override the Compose
+# user. The Jenkins pipeline normally runs with CI_UID:CI_GID from the start.
 if [ "$(id -u)" -eq 0 ] && [ -n "${CI_UID:-}" ] && [ "${CI_UID}" -ne 0 ]; then
     restore_workspace_owner() {
         for path in .dart_tool .pub-cache .gradle-cache .cache coverage build test-results \

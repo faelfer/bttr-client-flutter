@@ -1,0 +1,10 @@
+FROM ghcr.io/cirruslabs/flutter:3.41.9
+
+# Flutter rewrites a few top-level cache stamps on every invocation. Keep the
+# SDK itself immutable, but allow the Jenkins UID supplied by Compose to update
+# those files without running the whole container as root.
+RUN git config --system --add safe.directory /sdks/flutter \
+    && chmod a+rwx /sdks/flutter/bin/cache \
+    && find /sdks/flutter/bin/cache -maxdepth 1 -type f \
+        -exec chmod a+rw {} + \
+    && chmod -R a+rwX /sdks/flutter/packages/flutter_tools/.dart_tool

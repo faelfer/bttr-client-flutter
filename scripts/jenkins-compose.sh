@@ -37,4 +37,4 @@ cleanup() {
     exit "$exit_code"
 }
 trap cleanup EXIT
-docker compose -f compose.ci.yaml run --rm -T --no-deps "$@"
+docker compose -f compose.ci.yaml run --rm -T --no-deps --build "$@"

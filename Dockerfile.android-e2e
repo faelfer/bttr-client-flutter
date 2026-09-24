@@ -30,4 +30,14 @@ RUN yes | sdkmanager --licenses >/dev/null \
         --device pixel_7 \
     && rm -rf /root/.android/cache
 
+# The runner uses the Jenkins UID. Flutter's mutable stamps and the AVD must
+# therefore be writable, while the remainder of both SDKs stays immutable.
+RUN git config --system --add safe.directory /sdks/flutter \
+    && chmod a+rwx /sdks/flutter/bin/cache \
+    && find /sdks/flutter/bin/cache -maxdepth 1 -type f \
+        -exec chmod a+rw {} + \
+    && chmod -R a+rwX /sdks/flutter/packages/flutter_tools/.dart_tool \
+    && chmod a+rx /root /root/.android \
+    && chmod -R a+rwX /root/.android/avd
+
 ENV ANDROID_AVD_HOME=/root/.android/avd

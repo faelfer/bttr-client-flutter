@@ -25,12 +25,17 @@ fi
 
 CI_UID="$(id -u)"
 CI_GID="$(id -g)"
+if [ -e /dev/kvm ]; then
+    KVM_GID="$(stat -c %g /dev/kvm)"
+else
+    KVM_GID=0
+fi
 job_hash="$(printf '%s' "${JOB_NAME:-local}" | cksum | cut -d ' ' -f 1)"
 COMPOSE_PROJECT_NAME="bttr-client-flutter-e2e-${job_hash}-${BUILD_NUMBER:-local}"
 mock_project="${COMPOSE_PROJECT_NAME}-mock"
 runner_project="${COMPOSE_PROJECT_NAME}-runner"
 BTTR_MOCK_API_PORT="${BTTR_MOCK_API_PORT:-18080}"
-export CI_UID CI_GID COMPOSE_PROJECT_NAME BTTR_MOCK_API_PORT
+export CI_UID CI_GID KVM_GID COMPOSE_PROJECT_NAME BTTR_MOCK_API_PORT
 
 mock_started=
 cleanup() {

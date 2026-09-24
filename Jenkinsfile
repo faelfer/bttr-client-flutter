@@ -34,6 +34,45 @@ pipeline {
             stages {
                 stage('Checkout') {
                     steps {
+                        // Older root-run containers may have left generated
+                        // files that Jenkins cannot remove. Repair the bind
+                        // mount before deleteDir(); new containers run as the
+                        // Jenkins UID and no longer create this condition.
+                        sh '''
+                            set -eu
+                            foreign_path="$(
+                                find . -xdev ! -uid "$(id -u)" -print -quit \
+                                    2>/dev/null || true
+                            )"
+                            [ -n "$foreign_path" ] || exit 0
+                            echo "Reparando ownership legado a partir de: $foreign_path"
+
+                            host_workspace="$WORKSPACE"
+                            if [ -n "${CI_HOST_JENKINS_HOME:-}" ]; then
+                                : "${JENKINS_HOME:?JENKINS_HOME deve estar definido no Jenkins}"
+                                case "$WORKSPACE" in
+                                    "$JENKINS_HOME"/*)
+                                        host_workspace="$CI_HOST_JENKINS_HOME/${WORKSPACE#"$JENKINS_HOME"/}"
+                                        ;;
+                                    *)
+                                        echo 'WORKSPACE deve estar dentro de JENKINS_HOME.' >&2
+                                        exit 1
+                                        ;;
+                                esac
+                            fi
+                            case "$host_workspace" in
+                                /*/workspace/*) ;;
+                                *)
+                                    echo "Workspace recusado para reparo: $host_workspace" >&2
+                                    exit 1
+                                    ;;
+                            esac
+                            docker run --rm --user 0:0 \
+                                --volume "$host_workspace:/workspace" \
+                                --entrypoint chown \
+                                ghcr.io/cirruslabs/flutter:3.41.9 \
+                                -R "$(id -u):$(id -g)" /workspace
+                        '''
                         deleteDir()
                         checkout scm
                         updateGitlabCommitStatus name: 'ci', state: 'running'
