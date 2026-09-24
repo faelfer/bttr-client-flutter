@@ -1,0 +1,10 @@
+services:
+  sonar-scanner:
+    networks:
+      - default
+      - jenkins-infrastructure
+
+networks:
+  jenkins-infrastructure:
+    name: '${CI_INFRASTRUCTURE_NETWORK:-infraestrutura-network}'
+    external: true

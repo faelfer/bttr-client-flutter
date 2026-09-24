@@ -163,7 +163,8 @@ explícito, gatilhos e status de commit no GitLab, verificações separadas e
 artefato de cobertura. O agente precisa de Docker CLI, Compose v2 e acesso ao
 daemon; o Jenkins precisa dos plugins GitLab e JUnit usados pelo cliente
 Angular, além do Coverage para publicar LCOV e do Warnings Next
-Generation para publicar os relatórios SARIF de segurança. O
+Generation para publicar os relatórios SARIF de segurança e do SonarQube
+Scanner for Jenkins para executar a análise e aguardar o Quality Gate. O
 [Compose de CI](compose.ci.yaml) executa Flutter 3.41.9,
 Swift 6.3.3 e SwiftLint 0.65.0 em contêineres. Se o agente Jenkins também
 estiver em um contêiner, configure `CI_HOST_JENKINS_HOME` com o caminho de
@@ -182,6 +183,37 @@ nos testes da sessão. A etapa `test-ci` produz cobertura em
 preserva a falha de `flutter test` mesmo quando o relatório é gerado. A etapa
 `Coverage` exige no mínimo 90% de cobertura de linhas (a suíte atual mede
 aproximadamente 94,7%).
+
+O SonarScanner CLI oficial está fixado no serviço `sonar-scanner` do
+[Compose de CI](compose.ci.yaml) e lê o
+[`sonar-project.properties`](sonar-project.properties). A análise usa a chave
+`bttr-client-flutter`, o nome `BTTR Client Flutter` e importa a cobertura Dart
+de `coverage/lcov.info`. Para enviar uma análise manual, gere um token com
+permissão **Execute Analysis** e execute:
+
+```bash
+export SONAR_HOST_URL=http://host.docker.internal:9000
+export SONAR_TOKEN='<token>'
+./scripts/quality.sh test
+docker compose -f compose.ci.yaml run --rm --no-deps sonar-scanner
+```
+
+O token é um segredo e não deve ser adicionado aos arquivos de ambiente nem ao
+repositório.
+
+No Jenkins, cadastre em **Manage Jenkins > System > SonarQube installations**
+o servidor com o nome exato `SonarQube Local` e associe uma credencial
+**Secret text** que contenha o token de análise. A URL deve ser acessível pelo
+Jenkins e pelo contêiner `sonar-scanner`; não use `localhost` quando estiverem
+em contêineres diferentes. O [Compose do Jenkins](compose.jenkins.yaml) conecta
+o scanner à rede externa `infraestrutura-network`; defina
+`CI_INFRASTRUCTURE_NETWORK` se a infraestrutura usar outro nome.
+
+Depois de os testes gerarem o LCOV, a etapa **SonarQube Analysis** envia a
+análise usando `withSonarQubeEnv('SonarQube Local')`. A etapa **Quality Gate**
+aguarda o resultado por até 10 minutos e interrompe o pipeline se o gate não for
+aprovado. Para que essa espera receba o resultado, configure no SonarQube um
+webhook para `<URL_DO_JENKINS>/sonarqube-webhook/`, incluindo a barra final.
 
 Testes cobrem métodos, caminhos e payloads de todos os endpoints; sessão/401;
 validações; estatísticas; concorrência no BLoC; fluxos das telas e layouts de

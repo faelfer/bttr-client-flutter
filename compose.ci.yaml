@@ -24,6 +24,24 @@ services:
     image: bttr-client-flutter-ci:3.41.9
     entrypoint: [sh]
 
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:12.2.0.4256_8.1.0
+    init: true
+    working_dir: /usr/src
+    user: '${CI_UID:-1000}:${CI_GID:-1000}'
+    environment:
+      HOME: /tmp
+      SCANNER_WORKDIR_PATH: /usr/src/.scannerwork
+      SONAR_HOST_URL: '${SONAR_HOST_URL:-}'
+      SONAR_TOKEN: '${SONAR_TOKEN:-}'
+      SONAR_USER_HOME: /tmp/.sonar
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - type: bind
+        source: ${CI_WORKSPACE:-.}
+        target: /usr/src
+
   android-e2e:
     <<: *ci-service
     build:

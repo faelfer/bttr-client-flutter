@@ -16,6 +16,7 @@ test-results
 .pub-cache
 .gradle-cache
 .cache
+.scannerwork
 e2e/artifacts
 android/.gradle
 android/.kotlin
