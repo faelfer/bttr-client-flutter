@@ -162,9 +162,9 @@ O [Jenkinsfile](Jenkinsfile) segue o padrão do cliente Angular: checkout
 explícito, gatilhos e status de commit no GitLab, verificações separadas e
 artefato de cobertura. O agente precisa de Docker CLI, Compose v2 e acesso ao
 daemon; o Jenkins precisa dos plugins GitLab e JUnit usados pelo cliente
-Angular, além do Coverage para publicar LCOV e do Warnings Next
-Generation para publicar os relatórios SARIF de segurança e do SonarQube
-Scanner for Jenkins para executar a análise e aguardar o Quality Gate. O
+Angular, além do Coverage para publicar LCOV e do SonarQube Scanner for
+Jenkins para executar a análise e aguardar o Quality Gate. O Warnings Next
+Generation é opcional e melhora a visualização dos relatórios SARIF. O
 [Compose de CI](compose.ci.yaml) executa Flutter 3.41.9,
 Swift 6.3.3 e SwiftLint 0.65.0 em contêineres. Se o agente Jenkins também
 estiver em um contêiner, configure `CI_HOST_JENKINS_HOME` com o caminho de
@@ -293,10 +293,12 @@ pontual de Semgrep marca a assinatura de release com a chave de debug em
 naquela linha, e sai junto com o TODO quando a `signingConfig` de distribuição
 for configurada.
 
-O Jenkins publica os relatórios com o plugin **Warnings Next Generation**, que
-lê SARIF nativamente — ele é um pré-requisito novo, ao lado dos plugins GitLab,
-JUnit e Coverage já usados. A publicação usa `enabledForFailure`, para que os
-relatórios apareçam justamente nos builds em que uma etapa reprovou.
+O Jenkins sempre arquiva os relatórios SARIF em `test-results/security/`. Se o
+plugin opcional **Warnings Next Generation** estiver instalado, também os
+publica com navegação por arquivo e linha. Essa publicação usa
+`enabledForFailure`, para que os relatórios apareçam justamente nos builds em
+que uma etapa reprovou. Sem o plugin, o pipeline registra um aviso e mantém os
+SARIF nos artefatos, sem reprovar o build por uma integração de apresentação.
 
 Fora da camada 1, ficam pendentes o DAST com OWASP ZAP como proxy do emulador
 durante a suíte Appium e a análise do APK de release com o MobSF.

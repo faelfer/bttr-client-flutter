@@ -250,32 +250,43 @@ pipeline {
                         artifacts: 'coverage/**,test-results/**'
                     junit allowEmptyResults: true,
                         testResults: 'test-results/TEST-flutter.xml'
-                    // enabledForFailure publica os relatorios tambem quando um
-                    // estagio de seguranca reprovou — que e justamente quando
-                    // eles precisam ser lidos. O veredito ja veio do codigo de
-                    // saida da ferramenta; aqui o Jenkins so registra a
-                    // tendencia e ancora cada achado no arquivo e na linha.
-                    recordIssues(
-                        enabledForFailure: true,
-                        skipPublishingChecks: true,
-                        tools: [
-                            sarif(id: 'gitleaks',
-                                name: 'Segredos (Gitleaks)',
-                                pattern: 'test-results/security/gitleaks*.sarif'),
-                            sarif(id: 'osv-scanner',
-                                name: 'Dependencias (OSV-Scanner)',
-                                pattern: 'test-results/security/osv-scanner-*.sarif'),
-                            sarif(id: 'semgrep',
-                                name: 'SAST (Semgrep)',
-                                pattern: 'test-results/security/semgrep.sarif'),
-                            sarif(id: 'trivy',
-                                name: 'IaC (Trivy)',
-                                pattern: 'test-results/security/trivy-config.sarif'),
-                            sarif(id: 'hadolint',
-                                name: 'Dockerfile (Hadolint)',
-                                pattern: 'test-results/security/hadolint.sarif'),
-                        ]
-                    )
+                    // O Warnings Next Generation melhora a visualizacao, mas
+                    // nao participa do veredito: cada ferramenta ja devolveu
+                    // seu codigo de saida e os SARIF foram arquivados acima.
+                    // Assim, uma instalacao sem o plugin nao deve transformar
+                    // o post do estagio em falha nem impedir E2E/performance.
+                    script {
+                        try {
+                            recordIssues(
+                                enabledForFailure: true,
+                                skipPublishingChecks: true,
+                                tools: [
+                                    sarif(id: 'gitleaks',
+                                        name: 'Segredos (Gitleaks)',
+                                        pattern: 'test-results/security/gitleaks*.sarif'),
+                                    sarif(id: 'osv-scanner',
+                                        name: 'Dependencias (OSV-Scanner)',
+                                        pattern: 'test-results/security/osv-scanner-*.sarif'),
+                                    sarif(id: 'semgrep',
+                                        name: 'SAST (Semgrep)',
+                                        pattern: 'test-results/security/semgrep.sarif'),
+                                    sarif(id: 'trivy',
+                                        name: 'IaC (Trivy)',
+                                        pattern: 'test-results/security/trivy-config.sarif'),
+                                    sarif(id: 'hadolint',
+                                        name: 'Dockerfile (Hadolint)',
+                                        pattern: 'test-results/security/hadolint.sarif'),
+                                ]
+                            )
+                        } catch (NoSuchMethodError missingStep) {
+                            if (!missingStep.message.contains("No such DSL method 'sarif'") &&
+                                !missingStep.message.contains("No such DSL method 'recordIssues'")) {
+                                throw missingStep
+                            }
+                            echo 'Warnings Next Generation indisponivel; ' +
+                                'relatorios SARIF mantidos nos artefatos do build.'
+                        }
+                    }
                 }
             }
         }
