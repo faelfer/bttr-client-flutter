@@ -49,6 +49,8 @@ services:
       CI_GID: '${CI_GID:-1000}'
       BTTR_MOCK_API_PORT: '${BTTR_MOCK_API_PORT:-18080}'
       BTTR_MOCK_API_MANAGED_EXTERNALLY: '1'
+      PERF_P95_FRAME_MS: '${PERF_P95_FRAME_MS:-250}'
+      PERF_STARTUP_MEDIAN_MS: '${PERF_STARTUP_MEDIAN_MS:-10000}'
     entrypoint: [sh]
 
   swift-format:

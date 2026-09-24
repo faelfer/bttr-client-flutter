@@ -28,17 +28,28 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["bttrCleartextTraffic"] = "false"
     }
 
     buildTypes {
+        getByName("debug") {
+            manifestPlaceholders["bttrCleartextTraffic"] = "true"
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Only the isolated CI benchmark can reach the local HTTP WireMock.
+            manifestPlaceholders["bttrCleartextTraffic"] =
+                (System.getenv("BTTR_PERFORMANCE_BUILD") == "1").toString()
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 }

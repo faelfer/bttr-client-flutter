@@ -10,10 +10,12 @@
          framework — justamente a etapa que o sistema deixa de fazer. -->
     <application
         android:label="Bttr"
+        android:usesCleartextTraffic="${bttrCleartextTraffic}"
         android:allowBackup="false"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="false"
         android:icon="@mipmap/ic_launcher">
+        <profileable android:shell="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

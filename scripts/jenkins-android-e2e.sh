@@ -1,5 +1,10 @@
 #!/bin/sh
 set -eu
+mode="${1:-e2e}"
+case "$mode" in
+    e2e|performance) ;;
+    *) echo 'Uso: scripts/jenkins-android-e2e.sh [e2e|performance]' >&2; exit 2 ;;
+esac
 
 command -v docker >/dev/null || {
     echo 'O agente Jenkins precisa de Docker CLI e Compose v2.' >&2
@@ -31,7 +36,7 @@ else
     KVM_GID=0
 fi
 job_hash="$(printf '%s' "${JOB_NAME:-local}" | cksum | cut -d ' ' -f 1)"
-COMPOSE_PROJECT_NAME="bttr-client-flutter-e2e-${job_hash}-${BUILD_NUMBER:-local}"
+COMPOSE_PROJECT_NAME="bttr-client-flutter-${mode}-${job_hash}-${BUILD_NUMBER:-local}"
 mock_project="${COMPOSE_PROJECT_NAME}-mock"
 runner_project="${COMPOSE_PROJECT_NAME}-runner"
 BTTR_MOCK_API_PORT="${BTTR_MOCK_API_PORT:-18080}"
@@ -62,4 +67,4 @@ docker compose -p "$mock_project" -f compose.e2e.yaml \
     up -d --build --wait mock-api
 docker compose -p "$runner_project" -f compose.ci.yaml build android-e2e
 docker compose -p "$runner_project" -f compose.ci.yaml run --rm -T --no-deps \
-    android-e2e ./scripts/android-emulator-ci.sh
+    android-e2e ./scripts/android-emulator-ci.sh "$mode"

@@ -3,10 +3,12 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'src/app.dart';
 import 'src/core/config/app_config.dart';
 import 'src/core/config/dependencies.dart';
+import 'src/core/utils/performance_recorder.dart';
 import 'src/presentation/core/design/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  startPerformanceRecorder();
   try {
     final config = await AppConfig.load();
     await initializeDateFormatting('pt_BR');

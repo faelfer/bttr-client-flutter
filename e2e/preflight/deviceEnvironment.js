@@ -86,7 +86,7 @@ export function readCapabilities() {
         'appium:autoGrantPermissions': true,
         // sem animação de janela as telas não ficam em estado intermediário, o
         // que reduz toque perdido em botão durante a transição
-        'appium:disableWindowAnimation': true,
+        'appium:disableWindowAnimation': process.env.E2E_SUITE !== 'performance',
         // margem para o servidor UiAutomator2 subir no emulador
         'appium:uiautomator2ServerLaunchTimeout': 120000,
         'appium:uiautomator2ServerInstallTimeout': 120000,

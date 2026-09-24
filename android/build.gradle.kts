@@ -25,7 +25,7 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
-    if (name == "app") {
+    if (name == "app" || name == "macrobenchmark") {
         apply(plugin = "org.jlleitschuh.gradle.ktlint")
         configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
             version.set("1.8.0")

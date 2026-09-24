@@ -2,6 +2,15 @@
 set -eu
 
 platform="${1:-}"
+suite="${E2E_SUITE:-functional}"
+case "$suite" in
+    functional|performance) ;;
+    *) echo 'E2E_SUITE deve ser functional ou performance.' >&2; exit 2 ;;
+esac
+if [ "$suite" = performance ] && [ "$platform" != android ]; then
+    echo 'Performance CI está configurada apenas para Android.' >&2
+    exit 2
+fi
 case "$platform" in
     android)
         driver_name=uiautomator2
@@ -51,6 +60,7 @@ if [ "$platform" = android ]; then
             ;;
     esac
     export E2E_ANDROID_UDID
+    export ANDROID_SERIAL="$E2E_ANDROID_UDID"
     # Production ("user") images, such as google_apis_playstore, do not register
     # the launcher activity of sideloaded apps. Appium then fails to start its
     # io.appium.settings helper with a misleading "Activity class does not
@@ -154,10 +164,19 @@ fi
 
 flutter pub get
 if [ "$platform" = android ]; then
-    flutter build apk --debug \
-        --dart-define=FLUTTER_ENV=dev \
-        --dart-define="API_URL=http://10.0.2.2:$BTTR_MOCK_API_PORT"
-    export E2E_APP_PATH="$PWD/build/app/outputs/flutter-apk/app-debug.apk"
+    if [ "$suite" = performance ]; then
+        export BTTR_PERFORMANCE_BUILD=1
+        flutter build apk --release \
+            --dart-define=FLUTTER_ENV=dev \
+            --dart-define="API_URL=http://10.0.2.2:$BTTR_MOCK_API_PORT" \
+            --dart-define=BTTR_PERFORMANCE=true
+        export E2E_APP_PATH="$PWD/build/app/outputs/flutter-apk/app-release.apk"
+    else
+        flutter build apk --debug \
+            --dart-define=FLUTTER_ENV=dev \
+            --dart-define="API_URL=http://10.0.2.2:$BTTR_MOCK_API_PORT"
+        export E2E_APP_PATH="$PWD/build/app/outputs/flutter-apk/app-debug.apk"
+    fi
 else
     flutter build ios --simulator --debug \
         --dart-define=FLUTTER_ENV=dev \
@@ -182,4 +201,17 @@ done
     exit 1
 }
 
-npm run "test:e2e:$platform"
+if [ "$suite" = performance ]; then
+    npm run test:performance:android
+    kill "$appium_pid" 2>/dev/null || true
+    wait "$appium_pid" 2>/dev/null || true
+    appium_pid=
+    dart_defines="$(node -e 'process.stdout.write(["FLUTTER_ENV=dev", "API_URL=http://10.0.2.2:" + process.argv[1], "BTTR_PERFORMANCE=true"].map(x => Buffer.from(x).toString("base64")).join(","))' "$BTTR_MOCK_API_PORT")"
+    (cd android && ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest \
+        --no-daemon \
+        "-Pdart-defines=$dart_defines" \
+        -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR)
+    node scripts/check-macrobenchmark.mjs
+else
+    npm run "test:e2e:$platform"
+fi

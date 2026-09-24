@@ -32,10 +32,10 @@ case "${1:-}" in
         flutter analyze
         ;;
     kotlin-check)
-        (cd android && ./gradlew ktlintCheck :app:ktlintCheck --no-daemon)
+        (cd android && ./gradlew ktlintCheck :app:ktlintCheck :macrobenchmark:ktlintCheck --no-daemon)
         ;;
     kotlin-format)
-        (cd android && ./gradlew ktlintFormat :app:ktlintFormat --no-daemon)
+        (cd android && ./gradlew ktlintFormat :app:ktlintFormat :macrobenchmark:ktlintFormat --no-daemon)
         ;;
     swift-format-check)
         swift format lint --strict --recursive ios/Runner ios/RunnerTests

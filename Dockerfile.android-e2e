@@ -23,6 +23,7 @@ RUN yes | sdkmanager --licenses >/dev/null \
         "ndk;${ANDROID_NDK_VERSION}" \
         "platforms;android-34" \
         "platforms;android-35" \
+        "platforms;android-${ANDROID_API_LEVEL}" \
         "system-images;android-${ANDROID_API_LEVEL};${ANDROID_IMAGE};${ANDROID_ABI}" \
     && printf 'no\n' | avdmanager create avd --force \
         --name bttr-ci \

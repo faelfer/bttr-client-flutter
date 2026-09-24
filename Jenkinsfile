@@ -18,6 +18,16 @@ pipeline {
             defaultValue: 'master',
             description: 'Branch do bttr-server usada pelos testes E2E.'
         )
+        string(
+            name: 'PERF_P95_FRAME_MS',
+            defaultValue: '250',
+            description: 'Limite inicial do percentil 95 de frames no emulador, em ms.'
+        )
+        string(
+            name: 'PERF_STARTUP_MEDIAN_MS',
+            defaultValue: '10000',
+            description: 'Limite inicial da mediana de abertura Android, em ms.'
+        )
     }
 
     triggers {
@@ -183,6 +193,33 @@ pipeline {
                         testResults: 'test-results/TEST-e2e-helpers.xml,test-results/TEST-appium-android.xml'
                     archiveArtifacts allowEmptyArchive: true,
                         artifacts: 'test-results/appium-android*,e2e/artifacts/**'
+                }
+            }
+        }
+
+        stage('Android performance') {
+            agent any
+            options { timeout(time: 75, unit: 'MINUTES') }
+            steps {
+                deleteDir()
+                checkout scm
+                dir('.ci/bttr-server') {
+                    git branch: params.BTTR_SERVER_BRANCH,
+                        url: params.BTTR_SERVER_REPOSITORY
+                }
+                gitlabCommitStatus(name: 'performance-android') {
+                    sh '''
+                        export BTTR_MOCK_API_CONTEXT='.ci/bttr-server/mock-api'
+                        ./scripts/jenkins-android-e2e.sh performance
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                        testResults: 'test-results/TEST-e2e-helpers.xml,test-results/TEST-performance-android.xml,build/macrobenchmark/outputs/androidTest-results/connected/**/*.xml'
+                    archiveArtifacts allowEmptyArchive: true,
+                        artifacts: 'test-results/performance/**,test-results/appium-android.log,build/macrobenchmark/outputs/connected_android_test_additional_output/**'
                 }
             }
         }

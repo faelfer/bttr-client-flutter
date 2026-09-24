@@ -282,6 +282,37 @@ também precisa ter KVM disponível. A etapa faz checkout de `bttr-server` na
 branch definida pelos parâmetros `BTTR_SERVER_REPOSITORY` e
 `BTTR_SERVER_BRANCH`, como no pipeline Angular.
 
+## Performance Android no Jenkins
+
+A etapa **Android performance** executa no mesmo runner Linux com Docker,
+`/dev/kvm`, emulador API 36 e WireMock da suíte E2E. O app é compilado em
+release com `BTTR_PERFORMANCE=true`; apenas essa compilação recebe permissão
+para acessar o mock HTTP em `10.0.2.2`. Os builds release normais continuam
+sem tráfego HTTP liberado. O WireMock recebe atraso fixo de 100 ms durante o
+fluxo de interface e tem os cenários reiniciados antes da execução.
+
+O Appium percorre login, rolagem e histórico. O Flutter registra os tempos de
+construção, rasterização e duração total dos frames em
+`test-results/performance/frames.csv`; o teste reprova se não houver amostra
+ou se o percentil 95 ultrapassar `PERF_P95_FRAME_MS` (padrão inicial: 250 ms).
+O Macrobenchmark Android repete a abertura a frio cinco vezes e reprova se a
+mediana exceder `PERF_STARTUP_MEDIAN_MS` (padrão inicial: 10000 ms). O Jenkins
+publica os relatórios JUnit, resumos JSON e traces Perfetto. Ajuste os limites
+após obter uma série de referência no mesmo host; métricas do emulador servem
+para detectar regressões relativas, não para prever aparelhos físicos.
+
+No agente Linux configurado para E2E, rode localmente:
+
+```bash
+BTTR_MOCK_API_CONTEXT=../bttr-server/mock-api \
+  ./scripts/jenkins-android-e2e.sh performance
+```
+
+O benchmark exige KVM. Um runner que cair para emulação sem aceleração falha
+antes da medição. A API mock controla as respostas do app; esta etapa não mede
+a capacidade do backend real. O Perfetto fornece o trace de diagnóstico e os
+limites do Flutter e do Macrobenchmark definem a validação do build.
+
 ## Builds mobile
 
 ```bash

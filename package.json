@@ -8,9 +8,10 @@
   "scripts": {
     "test:e2e": "mocha \"e2e/specs/*.e2e.js\" --require e2e/preflight/hooks.js --timeout 480000 --reporter mocha-junit-reporter",
     "test:e2e:android": "E2E_PLATFORM=android MOCHA_FILE=test-results/TEST-appium-android.xml npm run test:e2e",
+    "test:performance:android": "E2E_PLATFORM=android MOCHA_FILE=test-results/TEST-performance-android.xml mocha \"e2e/performance/*.perf.js\" --timeout 480000 --reporter mocha-junit-reporter",
     "test:e2e:ios": "E2E_PLATFORM=ios MOCHA_FILE=test-results/TEST-appium-ios.xml npm run test:e2e",
-    "test:e2e:helpers": "mocha \"e2e/factories/__tests__/*.test.js\" \"e2e/preflight/__tests__/*.test.js\" --reporter spec",
-    "test:e2e:helpers:ci": "MOCHA_FILE=test-results/TEST-e2e-helpers.xml mocha \"e2e/factories/__tests__/*.test.js\" \"e2e/preflight/__tests__/*.test.js\" --reporter mocha-junit-reporter"
+    "test:e2e:helpers": "mocha \"e2e/factories/__tests__/*.test.js\" \"e2e/preflight/__tests__/*.test.js\" \"e2e/performance/__tests__/*.test.js\" --reporter spec",
+    "test:e2e:helpers:ci": "MOCHA_FILE=test-results/TEST-e2e-helpers.xml mocha \"e2e/factories/__tests__/*.test.js\" \"e2e/preflight/__tests__/*.test.js\" \"e2e/performance/__tests__/*.test.js\" --reporter mocha-junit-reporter"
   },
   "devDependencies": {
     "appium": "3.7.0",

@@ -1,5 +1,10 @@
 #!/bin/sh
 set -eu
+mode="${1:-e2e}"
+case "$mode" in
+    e2e|performance) ;;
+    *) echo 'Uso: scripts/android-emulator-ci.sh [e2e|performance]' >&2; exit 2 ;;
+esac
 
 for tool in adb emulator; do
     command -v "$tool" >/dev/null || {
@@ -20,6 +25,10 @@ if [ -z "$emulator_accel" ]; then
     else
         emulator_accel=off
     fi
+fi
+if [ "$mode" = performance ] && [ "$emulator_accel" != on ]; then
+    echo 'Performance exige /dev/kvm acessível ao runner.' >&2
+    exit 1
 fi
 
 emulator_pid=
@@ -82,10 +91,13 @@ done
     exit 1
 }
 
-adb -s "$emulator_serial" shell settings put global window_animation_scale 0
-adb -s "$emulator_serial" shell settings put global transition_animation_scale 0
-adb -s "$emulator_serial" shell settings put global animator_duration_scale 0
+animation_scale=0
+if [ "$mode" = performance ]; then animation_scale=1; fi
+adb -s "$emulator_serial" shell settings put global window_animation_scale "$animation_scale"
+adb -s "$emulator_serial" shell settings put global transition_animation_scale "$animation_scale"
+adb -s "$emulator_serial" shell settings put global animator_duration_scale "$animation_scale"
 adb -s "$emulator_serial" shell input keyevent 82
 
 export E2E_ANDROID_UDID="$emulator_serial"
+if [ "$mode" = performance ]; then export E2E_SUITE=performance; fi
 ./scripts/appium-e2e-ci.sh android
