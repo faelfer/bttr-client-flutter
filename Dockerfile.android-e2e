@@ -37,6 +37,7 @@ RUN git config --system --add safe.directory /sdks/flutter \
     && find /sdks/flutter/bin/cache -maxdepth 1 -type f \
         -exec chmod a+rw {} + \
     && chmod -R a+rwX /sdks/flutter/packages/flutter_tools/.dart_tool \
+    && chmod a+rwx /sdks/flutter/packages/flutter_tools/gradle \
     && chmod a+rx /root /root/.android \
     && chmod -R a+rwX /root/.android/avd
 

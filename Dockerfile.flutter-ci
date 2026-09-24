@@ -1,5 +1,13 @@
 FROM ghcr.io/cirruslabs/flutter:3.41.9
 
+ARG ANDROID_NDK_VERSION=28.2.13676358
+
+# The Android Gradle plugin resolves the configured NDK even for ktlint tasks.
+# Install it while building the image instead of letting a non-root CI process
+# mutate the Android SDK at runtime.
+RUN yes | sdkmanager --licenses >/dev/null \
+    && sdkmanager "ndk;${ANDROID_NDK_VERSION}"
+
 # Flutter rewrites a few top-level cache stamps on every invocation. Keep the
 # SDK itself immutable, but allow the Jenkins UID supplied by Compose to update
 # those files without running the whole container as root.
@@ -7,4 +15,5 @@ RUN git config --system --add safe.directory /sdks/flutter \
     && chmod a+rwx /sdks/flutter/bin/cache \
     && find /sdks/flutter/bin/cache -maxdepth 1 -type f \
         -exec chmod a+rw {} + \
-    && chmod -R a+rwX /sdks/flutter/packages/flutter_tools/.dart_tool
+    && chmod -R a+rwX /sdks/flutter/packages/flutter_tools/.dart_tool \
+    && chmod a+rwx /sdks/flutter/packages/flutter_tools/gradle
