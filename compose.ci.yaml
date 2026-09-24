@@ -23,6 +23,32 @@ services:
     user: '0:0'
     entrypoint: [sh]
 
+  android-e2e:
+    <<: *ci-service
+    build:
+      context: .
+      dockerfile: Dockerfile.android-e2e
+    image: bttr-client-flutter-android-e2e:3.41.9-node24-api36
+    # Appium, Flutter and the headless emulator share this container. Host
+    # networking makes the mock published on 127.0.0.1 visible through the
+    # emulator's 10.0.2.2 host alias.
+    user: '0:0'
+    network_mode: host
+    shm_size: 2gb
+    devices:
+      - /dev/kvm:/dev/kvm
+    environment:
+      CI: 'true'
+      HOME: /root
+      PUB_CACHE: /workspace/.pub-cache
+      GRADLE_USER_HOME: /workspace/.gradle-cache
+      XDG_CACHE_HOME: /workspace/.cache
+      CI_UID: '${CI_UID:-1000}'
+      CI_GID: '${CI_GID:-1000}'
+      BTTR_MOCK_API_PORT: '${BTTR_MOCK_API_PORT:-18080}'
+      BTTR_MOCK_API_MANAGED_EXTERNALLY: '1'
+    entrypoint: [sh]
+
   swift-format:
     <<: *ci-service
     image: swift:6.3.3-bookworm

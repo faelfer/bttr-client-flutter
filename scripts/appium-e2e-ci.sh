@@ -19,13 +19,19 @@ case "$platform" in
         ;;
 esac
 
-for tool in docker node npm flutter curl; do
+for tool in node npm flutter curl; do
     command -v "$tool" >/dev/null || {
         echo "Ferramenta obrigatória ausente: $tool" >&2
         exit 1
     }
 done
-docker compose version >/dev/null
+if [ "${BTTR_MOCK_API_MANAGED_EXTERNALLY:-0}" != 1 ]; then
+    command -v docker >/dev/null || {
+        echo 'Ferramenta obrigatória ausente: docker' >&2
+        exit 1
+    }
+    docker compose version >/dev/null
+fi
 
 if [ "$platform" = android ]; then
     command -v adb >/dev/null || {
@@ -74,7 +80,9 @@ else
     }
     export E2E_IOS_PLATFORM_VERSION
 fi
-docker info >/dev/null
+if [ "${BTTR_MOCK_API_MANAGED_EXTERNALLY:-0}" != 1 ]; then
+    docker info >/dev/null
+fi
 
 export APPIUM_HOME="${APPIUM_HOME:-$PWD/.appium}"
 export BTTR_MOCK_API_PORT="${BTTR_MOCK_API_PORT:-18080}"
@@ -90,6 +98,18 @@ mkdir -p test-results
 
 appium_pid=
 mock_started=
+restore_workspace_owner() {
+    if [ "$(id -u)" -eq 0 ] && [ -n "${CI_UID:-}" ] && [ "${CI_UID}" -ne 0 ]; then
+        for path in .appium .dart_tool .pub-cache .gradle-cache .cache \
+            node_modules build test-results e2e/artifacts \
+            .flutter-plugins-dependencies android/.gradle android/.kotlin \
+            android/local.properties android/app/src/main/java; do
+            if [ -e "$path" ]; then
+                chown -R "${CI_UID}:${CI_GID}" "$path"
+            fi
+        done
+    fi
+}
 cleanup() {
     status=$?
     trap - EXIT
@@ -103,12 +123,15 @@ cleanup() {
         fi
         docker compose -f compose.e2e.yaml down --remove-orphans || true
     fi
+    restore_workspace_owner
     exit "$status"
 }
 trap cleanup EXIT
 
-mock_started=1
-docker compose -f compose.e2e.yaml up -d --build --wait mock-api
+if [ "${BTTR_MOCK_API_MANAGED_EXTERNALLY:-0}" != 1 ]; then
+    mock_started=1
+    docker compose -f compose.e2e.yaml up -d --build --wait mock-api
+fi
 curl --fail --silent --show-error "$BTTR_MOCK_API_URL/mock/health" >/dev/null
 
 npm ci --no-audit --no-fund

@@ -1,0 +1,33 @@
+FROM node:24-bookworm-slim AS node
+
+FROM ghcr.io/cirruslabs/flutter:3.41.9
+
+ARG ANDROID_API_LEVEL=36
+ARG ANDROID_ABI=x86_64
+ARG ANDROID_IMAGE=google_apis
+ARG ANDROID_NDK_VERSION=28.2.13676358
+
+# The Flutter image already provides Flutter, the Android SDK, adb and the
+# emulator. Copy Node and npm from the official Node image so the Appium
+# toolchain uses the same Node major declared in package.json.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && npm install --global npm@10.9.7
+RUN yes | sdkmanager --licenses >/dev/null \
+    && sdkmanager \
+        "build-tools;35.0.0" \
+        "cmake;3.22.1" \
+        "emulator" \
+        "ndk;${ANDROID_NDK_VERSION}" \
+        "platforms;android-34" \
+        "platforms;android-35" \
+        "system-images;android-${ANDROID_API_LEVEL};${ANDROID_IMAGE};${ANDROID_ABI}" \
+    && printf 'no\n' | avdmanager create avd --force \
+        --name bttr-ci \
+        --package "system-images;android-${ANDROID_API_LEVEL};${ANDROID_IMAGE};${ANDROID_ABI}" \
+        --device pixel_7 \
+    && rm -rf /root/.android/cache
+
+ENV ANDROID_AVD_HOME=/root/.android/avd

@@ -7,8 +7,9 @@ if [ "$(id -u)" -eq 0 ] && [ -n "${CI_UID:-}" ] && [ "${CI_UID}" -ne 0 ]; then
     restore_workspace_owner() {
         for path in .dart_tool .pub-cache .gradle-cache .cache coverage build test-results \
             .flutter-plugins-dependencies android/.gradle android/.kotlin \
-            android/local.properties \
-            ios/Flutter/Generated.xcconfig ios/Flutter/flutter_export_environment.sh; do
+            android/local.properties android/app/src/main/java \
+            ios/Flutter/Generated.xcconfig ios/Flutter/flutter_export_environment.sh \
+            ios/Flutter/ephemeral; do
             if [ -e "$path" ]; then
                 chown -R "${CI_UID}:${CI_GID}" "$path"
             fi

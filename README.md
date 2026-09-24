@@ -271,13 +271,16 @@ avdmanager create avd -n e2e-api36 \
 
 O Jenkins executa E2E apenas no Android, na etapa **Appium Android E2E**, com
 status GitLab próprio e publicação JUnit. A execução em iOS fica disponível
-somente localmente. Configure um agente com label `android-e2e` (Linux ou
-macOS, Android SDK e emulador iniciado), com Node.js 24+, Flutter 3.41.9 e
-acesso ao daemon Docker. A etapa faz checkout de `bttr-server` na branch
-definida pelos parâmetros `BTTR_SERVER_REPOSITORY` e `BTTR_SERVER_BRANCH`,
-como no pipeline Angular. Ela exige um agente com dispositivo disponível; a
-instalação de pacotes npm e drivers Appium também requer acesso ao registro
-npm no agente.
+somente localmente. O serviço `android-e2e` de `compose.ci.yaml` contém Node.js
+24, npm, Flutter 3.41.9, Android SDK, `adb` e um AVD API 36 `google_apis`. O
+script `scripts/jenkins-android-e2e.sh` sobe o mock, constrói esse runner e
+inicia nele um emulador headless antes do Appium; portanto, o executor Jenkins
+precisa apenas de Docker CLI, Compose v2, acesso ao daemon e ao registro npm.
+O Compose monta `/dev/kvm` diretamente do host Docker no runner para acelerar o
+emulador, mesmo quando o próprio Jenkins roda em contêiner; por isso o host
+também precisa ter KVM disponível. A etapa faz checkout de `bttr-server` na
+branch definida pelos parâmetros `BTTR_SERVER_REPOSITORY` e
+`BTTR_SERVER_BRANCH`, como no pipeline Angular.
 
 ## Builds mobile
 

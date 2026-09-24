@@ -122,7 +122,7 @@ pipeline {
         }
 
         stage('Appium Android E2E') {
-            agent { label 'android-e2e' }
+            agent any
             options { timeout(time: 60, unit: 'MINUTES') }
             steps {
                 deleteDir()
@@ -134,7 +134,7 @@ pipeline {
                 gitlabCommitStatus(name: 'e2e-android') {
                     sh '''
                         export BTTR_MOCK_API_CONTEXT='.ci/bttr-server/mock-api'
-                        ./scripts/appium-e2e-ci.sh android
+                        ./scripts/jenkins-android-e2e.sh
                     '''
                 }
             }
