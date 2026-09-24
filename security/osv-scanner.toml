@@ -1,0 +1,10 @@
+# Vulnerabilidades aceitas conscientemente. Cada entrada precisa de justificativa
+# e de uma data de reavaliação — sem isso o arquivo vira um depósito silencioso e
+# o estágio deixa de significar alguma coisa.
+#
+# Formato:
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2026-12-31
+# reason = "Por que não se aplica a este aplicativo, ou o que bloqueia a correção."

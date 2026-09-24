@@ -1,0 +1,13 @@
+# Achados de IaC aceitos, com o motivo ao lado. O arquivo é lido pelo estágio de
+# IaC do pipeline; cada entrada é uma decisão revisável em code review, e não um
+# silenciamento genérico — o identificador é específico e continua valendo para
+# qualquer arquivo novo que repita o mesmo padrão.
+misconfigurations:
+  - id: DS-0002
+    statement: >-
+      Último USER do Dockerfile é root. As três imagens deste repositório são
+      executadas pelo compose.ci.yaml com user: '${CI_UID}:${CI_GID}', o UID do
+      agente Jenkins, que só é conhecido no host. Fixar um USER na imagem não
+      tornaria a execução menos privilegiada — apenas quebraria o ajuste de
+      permissões que os Dockerfiles fazem para esse UID, e faria o container
+      escrever no workspace com um dono que o Jenkins não consegue remover.

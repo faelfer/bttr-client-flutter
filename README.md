@@ -162,7 +162,8 @@ O [Jenkinsfile](Jenkinsfile) segue o padrão do cliente Angular: checkout
 explícito, gatilhos e status de commit no GitLab, verificações separadas e
 artefato de cobertura. O agente precisa de Docker CLI, Compose v2 e acesso ao
 daemon; o Jenkins precisa dos plugins GitLab e JUnit usados pelo cliente
-Angular, além do Coverage para publicar LCOV. O
+Angular, além do Coverage para publicar LCOV e do Warnings Next
+Generation para publicar os relatórios SARIF de segurança. O
 [Compose de CI](compose.ci.yaml) executa Flutter 3.41.9,
 Swift 6.3.3 e SwiftLint 0.65.0 em contêineres. Se o agente Jenkins também
 estiver em um contêiner, configure `CI_HOST_JENKINS_HOME` com o caminho de
@@ -186,6 +187,87 @@ Testes cobrem métodos, caminhos e payloads de todos os endpoints; sessão/401;
 validações; estatísticas; concorrência no BLoC; fluxos das telas e layouts de
 celular/tablet. Mocks existem apenas em `test/`. Esses testes **não executam o
 backend real nem o envio de e-mail**.
+
+## Segurança
+
+A camada 1 — segredos, dependências, SAST e IaC — roda no contêiner `security`
+do [Compose de CI](compose.ci.yaml), sem emulador, sem mock e sem acesso ao
+socket do Docker. Um subcomando por verificação, no mesmo formato do
+`quality.sh`:
+
+```bash
+./scripts/security.sh secrets          # Gitleaks 8.30.1 na árvore de trabalho
+./scripts/security.sh secrets-history  # Gitleaks no histórico do Git
+./scripts/security.sh deps             # OSV-Scanner 2.6.0 em pubspec.lock
+./scripts/security.sh deps-toolchain   # OSV-Scanner em package-lock.json
+./scripts/security.sh sast             # Semgrep OSS 1.178.0
+./scripts/security.sh iac              # Trivy 0.74.0 e Hadolint 2.15.1
+./scripts/security.sh all              # todas, em sequência
+```
+
+Para reproduzir uma etapa exatamente como o Jenkins a executa:
+
+```bash
+./scripts/jenkins-compose.sh security ./scripts/security.sh sast
+```
+
+As cinco ferramentas vivem na mesma imagem
+([Dockerfile.security](Dockerfile.security)), com as regras públicas do Semgrep
+e o bundle de checagens do Trivy embutidos no build. A execução, portanto, não
+depende de rede nem muda de resultado conforme o que os catálogos publicaram
+naquele dia; atualizar as regras é trocar a referência fixada no Dockerfile,
+revisável como qualquer outra mudança.
+
+Cada ferramenta grava SARIF em `test-results/security/` e decide sozinha o que é
+achado bloqueante — o script não reimplementa o veredito, apenas propaga o
+código de saída. `SECURITY_GATE=report` executa tudo e publica os relatórios sem
+reprovar, para calibrar uma regra nova antes de torná-la bloqueante; o padrão é
+`enforce`. O Jenkins expõe isso no parâmetro `SECURITY_GATE` do build.
+
+O que cada etapa cobre:
+
+| Etapa | Ferramenta | Escopo | Portão |
+| --- | --- | --- | --- |
+| `secrets` | Gitleaks | Árvore de trabalho, regras padrão | Qualquer vazamento reprova |
+| `deps` | OSV-Scanner | `pubspec.lock` | Qualquer vulnerabilidade reprova |
+| `deps-toolchain` | OSV-Scanner | `package-lock.json` | Somente relatório |
+| `sast` | Semgrep OSS | Dart, Kotlin, Swift, JavaScript | Severidade `ERROR` reprova |
+| `iac` | Trivy, Hadolint | Dockerfiles e Compose | `HIGH`/`CRITICAL` e `error` reprovam |
+
+A política de dependências separa por exposição, não por conveniência.
+`pubspec.lock` é a única lista que vira código dentro do APK e do IPA, então ela
+reprova o build. A árvore npm existe para o Appium, o WebdriverIO e o Mocha, que
+só executam no contêiner de CI contra o mock e nunca entram no artefato
+distribuído; ela é reportada e revisada, não bloqueia. Promover uma delas a
+bloqueante é trocar o modo do subcomando `deps-toolchain` em
+[scripts/security.sh](scripts/security.sh).
+
+O Semgrep não publica regras para Dart — o diretório `dart/` do `semgrep-rules`
+é vazio, e o pacote oficial cobre Kotlin, Swift e JavaScript. As regras deste
+aplicativo estão em [security/semgrep](security/semgrep) e guardam as decisões
+que o código já toma: validação de certificado, `followRedirects = false` no
+`ApiClient`, token apenas no `flutter_secure_storage`, credencial fora do log,
+assinatura do release e `usesCleartextTraffic` no manifesto. Elas existem para
+impedir a regressão, não para descobrir o que já está correto.
+
+As exceções ficam em arquivos próprios, cada uma com o motivo ao lado:
+[security/gitleaks.toml](security/gitleaks.toml) para a massa dos cenários E2E,
+[security/osv-scanner.toml](security/osv-scanner.toml) para vulnerabilidades
+aceitas, [security/trivy-ignore.yaml](security/trivy-ignore.yaml) e
+[security/hadolint.yaml](security/hadolint.yaml) para o `USER` root das imagens,
+que o Compose substitui em tempo de execução pelo UID do Jenkins. Uma supressão
+pontual de Semgrep marca a assinatura de release com a chave de debug em
+`android/app/build.gradle.kts`, ao lado do `TODO` que já estava lá: ela vale só
+naquela linha, e sai junto com o TODO quando a `signingConfig` de distribuição
+for configurada.
+
+O Jenkins publica os relatórios com o plugin **Warnings Next Generation**, que
+lê SARIF nativamente — ele é um pré-requisito novo, ao lado dos plugins GitLab,
+JUnit e Coverage já usados. A publicação usa `enabledForFailure`, para que os
+relatórios apareçam justamente nos builds em que uma etapa reprovou.
+
+Fora da camada 1, ficam pendentes o DAST com OWASP ZAP como proxy do emulador
+durante a suíte Appium e a análise do APK de release com o MobSF.
 
 ### Testes E2E mobile com Appium
 

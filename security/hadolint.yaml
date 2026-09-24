@@ -1,0 +1,19 @@
+# Hadolint sobre os Dockerfiles do CI. O projeto constrói três imagens próprias,
+# todas derivadas de imagens oficiais fixadas por tag, e todas executadas pelo
+# Compose com o UID do Jenkins.
+failure-threshold: error
+
+ignored:
+  # DL3002 (último USER é root): o Compose define user: '${CI_UID}:${CI_GID}'
+  # em tempo de execução, em compose.ci.yaml. Fixar USER na imagem quebraria o
+  # ajuste de permissões que os Dockerfiles fazem para o UID do Jenkins, que só
+  # é conhecido no agente.
+  - DL3002
+  # DL3018 (fixar versão no apk add): as imagens são reconstruídas a cada
+  # execução do pipeline e o repositório do Alpine não mantém versões antigas;
+  # fixá-las tornaria o build frágil sem ganho de reprodutibilidade real.
+  - DL3018
+
+trustedRegistries:
+  - docker.io
+  - ghcr.io

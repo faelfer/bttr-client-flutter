@@ -1,0 +1,67 @@
+# O token de sessão tem um único caminho legítimo de persistência neste
+# aplicativo: o SecureTokenStorage, sobre o flutter_secure_storage — Keystore no
+# Android e Keychain no iOS. As regras abaixo fecham as saídas alternativas.
+rules:
+  - id: bttr-dart-token-outside-secure-storage
+    languages: [dart]
+    severity: ERROR
+    message: >-
+      Credencial persistida fora do flutter_secure_storage. SharedPreferences e
+      arquivos no diretório do aplicativo são legíveis em um dispositivo com
+      root e entram no backup do sistema. Use o SecureTokenStorage de
+      lib/src/data/datasources/session_store.dart.
+    metadata:
+      category: security
+      cwe: 'CWE-922: Insecure Storage of Sensitive Information'
+      owasp: 'M9: Insecure Data Storage'
+      confidence: MEDIUM
+    paths:
+      include:
+        - lib/
+    patterns:
+      - pattern-either:
+          - pattern: $PREFS.setString($KEY, ...)
+          - pattern: $FILE.writeAsString(...)
+          - pattern: $FILE.writeAsStringSync(...)
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i).*(token|senha|password|secret|credential|auth).*
+
+  - id: bttr-dart-credential-in-log
+    languages: [dart]
+    severity: ERROR
+    message: >-
+      Credencial enviada para o log. No Android o logcat é lido por qualquer
+      processo com READ_LOGS e pelo bugreport; um token registrado ali sobrevive
+      ao encerramento da sessão no aplicativo.
+    metadata:
+      category: security
+      cwe: 'CWE-532: Insertion of Sensitive Information into Log File'
+      owasp: 'M9: Insecure Data Storage'
+      confidence: MEDIUM
+    paths:
+      include:
+        - lib/
+    patterns:
+      - pattern-either:
+          - pattern: print($MESSAGE)
+          - pattern: debugPrint($MESSAGE, ...)
+          - pattern: log($MESSAGE, ...)
+      - metavariable-regex:
+          metavariable: $MESSAGE
+          regex: (?i).*(token|senha|password|secret|credential|authorization).*
+
+  - id: bttr-dart-insecure-random-for-secret
+    languages: [dart]
+    severity: WARNING
+    message: >-
+      Random() usa um gerador previsível. Para qualquer valor com função de
+      segredo — token, nonce, identificador de sessão — use Random.secure().
+    metadata:
+      category: security
+      cwe: 'CWE-338: Use of Cryptographically Weak PRNG'
+      confidence: LOW
+    paths:
+      include:
+        - lib/
+    pattern: Random()

@@ -1,0 +1,25 @@
+# Sem agente macOS no Jenkins não há IPA para analisar, então o que dá para
+# checar de iOS em Linux é a configuração declarada: App Transport Security no
+# Info.plist e uso de UserDefaults para dado sensível no código Swift, este
+# último já coberto pelo pacote público swift/.
+rules:
+  - id: bttr-ios-app-transport-security-disabled
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      App Transport Security desligado no Info.plist. NSAllowsArbitraryLoads
+      libera HTTP em texto claro para qualquer host, anulando a proteção que o
+      iOS aplica por padrão às requisições do aplicativo.
+    metadata:
+      category: security
+      cwe: 'CWE-319: Cleartext Transmission of Sensitive Information'
+      owasp: 'M5: Insecure Communication'
+      confidence: HIGH
+    paths:
+      include:
+        - '*Info.plist'
+    patterns:
+      - pattern-inside: |
+          <key>NSAllowsArbitraryLoads</key>
+          ...
+      - pattern-regex: <true/>

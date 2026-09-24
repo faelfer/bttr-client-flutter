@@ -28,6 +28,17 @@ pipeline {
             defaultValue: '10000',
             description: 'Limite inicial da mediana de abertura Android, em ms.'
         )
+        choice(
+            name: 'SECURITY_GATE',
+            choices: ['enforce', 'report'],
+            description: 'enforce reprova o build em achado de seguranca; ' +
+                'report apenas publica os relatorios. Use report para calibrar ' +
+                'uma regra nova antes de torna-la bloqueante.'
+        )
+    }
+
+    environment {
+        SECURITY_GATE = "${params.SECURITY_GATE}"
     }
 
     triggers {
@@ -159,6 +170,43 @@ pipeline {
                         }
                     }
                 }
+
+                stage('Security: secrets') {
+                    steps {
+                        gitlabCommitStatus(name: 'security-secrets') {
+                            sh './scripts/jenkins-compose.sh security ./scripts/security.sh secrets'
+                        }
+                    }
+                }
+
+                stage('Security: dependencies') {
+                    steps {
+                        gitlabCommitStatus(name: 'security-deps') {
+                            // Duas politicas distintas: pubspec.lock reprova
+                            // porque vira codigo no aparelho do usuario; a
+                            // arvore npm do Appium so reporta, porque nao entra
+                            // no artefato distribuido.
+                            sh './scripts/jenkins-compose.sh security ./scripts/security.sh deps'
+                            sh './scripts/jenkins-compose.sh security ./scripts/security.sh deps-toolchain'
+                        }
+                    }
+                }
+
+                stage('Security: SAST') {
+                    steps {
+                        gitlabCommitStatus(name: 'security-sast') {
+                            sh './scripts/jenkins-compose.sh security ./scripts/security.sh sast'
+                        }
+                    }
+                }
+
+                stage('Security: IaC') {
+                    steps {
+                        gitlabCommitStatus(name: 'security-iac') {
+                            sh './scripts/jenkins-compose.sh security ./scripts/security.sh iac'
+                        }
+                    }
+                }
             }
             post {
                 always {
@@ -166,6 +214,32 @@ pipeline {
                         artifacts: 'coverage/**,test-results/**'
                     junit allowEmptyResults: true,
                         testResults: 'test-results/TEST-flutter.xml'
+                    // enabledForFailure publica os relatorios tambem quando um
+                    // estagio de seguranca reprovou — que e justamente quando
+                    // eles precisam ser lidos. O veredito ja veio do codigo de
+                    // saida da ferramenta; aqui o Jenkins so registra a
+                    // tendencia e ancora cada achado no arquivo e na linha.
+                    recordIssues(
+                        enabledForFailure: true,
+                        skipPublishingChecks: true,
+                        tools: [
+                            sarif(id: 'gitleaks',
+                                name: 'Segredos (Gitleaks)',
+                                pattern: 'test-results/security/gitleaks*.sarif'),
+                            sarif(id: 'osv-scanner',
+                                name: 'Dependencias (OSV-Scanner)',
+                                pattern: 'test-results/security/osv-scanner-*.sarif'),
+                            sarif(id: 'semgrep',
+                                name: 'SAST (Semgrep)',
+                                pattern: 'test-results/security/semgrep.sarif'),
+                            sarif(id: 'trivy',
+                                name: 'IaC (Trivy)',
+                                pattern: 'test-results/security/trivy-config.sarif'),
+                            sarif(id: 'hadolint',
+                                name: 'Dockerfile (Hadolint)',
+                                pattern: 'test-results/security/hadolint.sarif'),
+                        ]
+                    )
                 }
             }
         }

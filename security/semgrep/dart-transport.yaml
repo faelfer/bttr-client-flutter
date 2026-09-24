@@ -1,0 +1,57 @@
+# O Semgrep não publica regras para Dart: o pacote oficial cobre Kotlin, Swift e
+# JavaScript, e o diretório dart/ do semgrep-rules está vazio. As regras abaixo
+# são, portanto, escritas para este aplicativo, e guardam as decisões de
+# transporte que o ApiClient já toma hoje — o objetivo delas é impedir a
+# regressão, não descobrir o que já está correto.
+rules:
+  - id: bttr-dart-tls-verification-disabled
+    languages: [dart]
+    severity: ERROR
+    message: >-
+      Verificação de certificado TLS desligada. O aplicativo passa a aceitar
+      qualquer certificado, inclusive o de um proxy interceptando a sessão do
+      usuário. Se a intenção é apontar para o mock local, use a URL de
+      desenvolvimento em env/.env.dev em vez de desabilitar a validação.
+    metadata:
+      category: security
+      cwe: 'CWE-295: Improper Certificate Validation'
+      owasp: 'M5: Insecure Communication'
+      confidence: HIGH
+    pattern-either:
+      - pattern: $CLIENT.badCertificateCallback = $CALLBACK
+      - pattern: HttpOverrides.global = $OVERRIDE
+      - pattern: $CONTEXT.allowLegacyUnsafeRenegotiation = true
+
+  - id: bttr-dart-follow-redirects-enabled
+    languages: [dart]
+    severity: ERROR
+    message: >-
+      Requisição seguindo redirecionamentos. O ApiClient define
+      followRedirects = false de propósito: o cabeçalho Authorization
+      acompanharia o redirecionamento e vazaria o token para o host de destino.
+    metadata:
+      category: security
+      cwe: 'CWE-601: URL Redirection to Untrusted Site'
+      owasp: 'M5: Insecure Communication'
+      confidence: HIGH
+    pattern-either:
+      - pattern: $REQUEST.followRedirects = true
+      - pattern: $REQUEST..followRedirects = true
+
+  - id: bttr-dart-cleartext-url
+    languages: [dart]
+    severity: ERROR
+    message: >-
+      URL http:// fixa no código. O tráfego autenticado do aplicativo sairia sem
+      TLS. A URL da API vem de env/ via flutter_dotenv, e só o ambiente de
+      desenvolvimento aponta para o mock em cleartext.
+    metadata:
+      category: security
+      cwe: 'CWE-319: Cleartext Transmission of Sensitive Information'
+      owasp: 'M5: Insecure Communication'
+      confidence: MEDIUM
+    paths:
+      include:
+        - lib/
+    patterns:
+      - pattern-regex: (?i)["']http://(?!localhost|127\.0\.0\.1|10\.0\.2\.2)

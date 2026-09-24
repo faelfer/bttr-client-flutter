@@ -1,0 +1,38 @@
+# Configuração do Gitleaks: o conjunto padrão (mais de 200 regras de provedores
+# conhecidos) permanece ativo e a lista abaixo só recorta o que é massa de teste
+# declarada. As exceções são por caminho, e não por padrão de texto, para que um
+# segredo real em qualquer outro arquivo continue disparando.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """
+Massa dos cenários E2E. As credenciais em e2e/mocks/ e e2e/factories/ existem
+para casar com os estados que o mock-api devolve; elas não abrem nada fora do
+container de mock. Trocá-las quebra os specs, então precisam ficar no repositório.
+"""
+paths = [
+    '''^e2e/mocks/''',
+    '''^e2e/factories/''',
+]
+
+[[allowlists]]
+description = """
+Artefatos gerados: dependências de terceiros, saídas de build e relatórios do
+próprio CI (inclusive os relatórios de segurança, que citam trechos achados).
+Nada aqui é código-fonte deste repositório.
+"""
+paths = [
+    '''^node_modules/''',
+    '''^build/''',
+    '''^coverage/''',
+    '''^test-results/''',
+    '''^\.dart_tool/''',
+    '''^\.pub-cache/''',
+    '''^\.gradle-cache/''',
+    '''^\.cache/''',
+    '''^\.appium/''',
+    '''^\.ci/''',
+    '''^e2e/artifacts/''',
+    '''^ios/Pods/''',
+]

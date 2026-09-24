@@ -1,0 +1,30 @@
+# Trivy no modo de configuração: ele lê os Dockerfiles e o Compose deste
+# repositório contra as políticas de IaC embutidas na imagem de segurança.
+# Análise de imagem publicada e de dependências não entram aqui — dependências
+# são do OSV-Scanner, e imagem exige o socket do Docker, que fica para a etapa
+# seguinte de maturidade.
+exit-code: 1
+
+severity:
+  - HIGH
+  - CRITICAL
+
+misconfiguration:
+  # O bundle de checagens já veio no build da imagem (Dockerfile.security), então
+  # a execução não depende de rede nem varia com o que o GHCR publicou hoje.
+  skip-check-update: true
+  include-non-failures: false
+
+scan:
+  skip-dirs:
+    - node_modules
+    - build
+    - .dart_tool
+    - .pub-cache
+    - .gradle-cache
+    - .cache
+    - test-results
+    - e2e/artifacts
+    # Repositório do bttr-server clonado pelo pipeline de E2E: ele tem o próprio
+    # ciclo de revisão e não é código deste projeto.
+    - .ci

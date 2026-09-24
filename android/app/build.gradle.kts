@@ -38,6 +38,12 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
+            // A regra bttr-android-release-signed-with-debug-key do estágio de
+            // SAST reprova exatamente esta linha. A supressão é pontual e vale
+            // só aqui: qualquer outro release que voltar a apontar para a
+            // debug keystore continua reprovando. Remova-a junto com o TODO
+            // acima, ao configurar a signingConfig de distribuição.
+            // nosemgrep: bttr-android-release-signed-with-debug-key
             signingConfig = signingConfigs.getByName("debug")
             // Only the isolated CI benchmark can reach the local HTTP WireMock.
             manifestPlaceholders["bttrCleartextTraffic"] =

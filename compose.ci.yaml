@@ -53,6 +53,24 @@ services:
       PERF_STARTUP_MEDIAN_MS: '${PERF_STARTUP_MEDIAN_MS:-10000}'
     entrypoint: [sh]
 
+  # Camada 1 de segurança: Gitleaks, OSV-Scanner, Semgrep, Trivy e Hadolint na
+  # mesma imagem, com as regras públicas e o bundle de checagens já embutidos.
+  # Não depende de emulador, de mock nem do socket do Docker.
+  security:
+    <<: *ci-service
+    build:
+      context: .
+      dockerfile: Dockerfile.security
+    image: bttr-client-flutter-security:semgrep1.178-trivy0.74
+    environment:
+      CI: 'true'
+      HOME: /tmp
+      XDG_CACHE_HOME: /workspace/.cache
+      CI_UID: '${CI_UID:-1000}'
+      CI_GID: '${CI_GID:-1000}'
+      SECURITY_GATE: '${SECURITY_GATE:-enforce}'
+    entrypoint: [sh]
+
   swift-format:
     <<: *ci-service
     image: swift:6.3.3-bookworm

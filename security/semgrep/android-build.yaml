@@ -1,0 +1,83 @@
+# Regras sobre a configuração de build do Android. O pacote público do Semgrep
+# para Kotlin cobre criptografia e injeção na linguagem, mas não o que o Gradle
+# Kotlin DSL decide sobre assinatura e ofuscação — que é onde este projeto tem
+# TODOs abertos em android/app/build.gradle.kts.
+rules:
+  - id: bttr-android-release-signed-with-debug-key
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      Build de release assinado com a chave de debug. A debug keystore é pública
+      e igual em toda instalação do Android SDK: qualquer pessoa consegue
+      assinar um APK que o dispositivo aceita como atualização deste
+      aplicativo. Configure uma signingConfig própria antes de distribuir.
+    metadata:
+      category: security
+      cwe: 'CWE-321: Use of Hard-coded Cryptographic Key'
+      owasp: 'M10: Insufficient Cryptography'
+      confidence: HIGH
+    paths:
+      include:
+        - '*.gradle.kts'
+    patterns:
+      - pattern-inside: |
+          release {
+            ...
+          }
+      - pattern: signingConfig = signingConfigs.getByName("debug")
+
+  - id: bttr-android-hardcoded-keystore-credential
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      Credencial de keystore fixa no Gradle. Senhas de assinatura entram por
+      variável de ambiente ou pelo Credentials Binding do Jenkins, nunca pelo
+      arquivo de build versionado.
+    metadata:
+      category: security
+      cwe: 'CWE-798: Use of Hard-coded Credentials'
+      confidence: HIGH
+    paths:
+      include:
+        - '*.gradle.kts'
+    pattern-either:
+      - pattern: storePassword = "..."
+      - pattern: keyPassword = "..."
+
+  - id: bttr-android-manifest-cleartext-traffic
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      usesCleartextTraffic fixado em true no manifesto. O projeto controla isso
+      por manifestPlaceholders, que só libera cleartext no build de debug e no
+      de performance isolado do CI; um true literal aqui vale também para o
+      release entregue ao usuário.
+    metadata:
+      category: security
+      cwe: 'CWE-319: Cleartext Transmission of Sensitive Information'
+      owasp: 'M5: Insecure Communication'
+      confidence: HIGH
+    paths:
+      include:
+        - '*AndroidManifest.xml'
+    pattern-regex: android:usesCleartextTraffic\s*=\s*"true"
+
+  - id: bttr-android-debuggable-or-backup-enabled
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      Manifesto liberando depuração ou backup do sistema. android:debuggable
+      permite anexar um depurador ao processo em um aparelho de produção, e
+      allowBackup expõe o diretório do aplicativo via adb backup — o projeto
+      mantém allowBackup="false" justamente por causa do token de sessão.
+    metadata:
+      category: security
+      cwe: 'CWE-530: Exposure of Backup File to an Unauthorized Control Sphere'
+      owasp: 'M8: Security Misconfiguration'
+      confidence: HIGH
+    paths:
+      include:
+        - '*AndroidManifest.xml'
+    pattern-either:
+      - pattern-regex: android:debuggable\s*=\s*"true"
+      - pattern-regex: android:allowBackup\s*=\s*"true"

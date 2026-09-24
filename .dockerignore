@@ -1,0 +1,25 @@
+# Nenhum dos Dockerfiles deste repositório copia arquivos do contexto: as três
+# imagens só instalam ferramentas. Sem esta lista, o `docker compose build` de
+# cada estágio envia ao daemon os diretórios gerados — hoje mais de 3 GB entre
+# build/, .dart_tool/ e node_modules/ — a cada execução do pipeline.
+.git
+.github
+.idea
+.vscode
+.appium
+.ci
+node_modules
+build
+coverage
+test-results
+.dart_tool
+.pub-cache
+.gradle-cache
+.cache
+e2e/artifacts
+android/.gradle
+android/.kotlin
+ios/Pods
+ios/.symlinks
+**/*.mp4
+**/*.png

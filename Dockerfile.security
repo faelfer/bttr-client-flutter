@@ -1,0 +1,49 @@
+# Camada 1 de segurança: segredos, dependências, SAST e IaC.
+#
+# As quatro ferramentas moram na mesma imagem porque o pipeline as executa em
+# sequência sobre o mesmo workspace: uma imagem significa um build cacheado e um
+# único ponto de versionamento. Todas as oficiais são Alpine ou binário estático,
+# então o Semgrep — a maior delas e a única que já traz Python — serve de base e
+# as demais entram por COPY, no mesmo padrão do Dockerfile.android-e2e.
+FROM ghcr.io/gitleaks/gitleaks:v8.30.1 AS gitleaks
+FROM ghcr.io/google/osv-scanner:v2.6.0 AS osv-scanner
+FROM aquasec/trivy:0.74.0 AS trivy
+FROM hadolint/hadolint:v2.15.1-alpine AS hadolint
+
+FROM semgrep/semgrep:1.178.0
+
+ARG SEMGREP_RULES_REF=a84ff9cc2453ca91d581380de4b8b3f272f6f4be
+
+COPY --from=gitleaks /usr/bin/gitleaks /usr/local/bin/gitleaks
+COPY --from=osv-scanner /osv-scanner /usr/local/bin/osv-scanner
+COPY --from=trivy /usr/local/bin/trivy /usr/local/bin/trivy
+COPY --from=hadolint /bin/hadolint /usr/local/bin/hadolint
+
+RUN apk add --no-cache git jq
+
+# As regras públicas do Semgrep entram na imagem em vez de serem baixadas do
+# registry a cada execução: o resultado deixa de variar com o que a semgrep.dev
+# publicou naquele dia, e uma indisponibilidade dela não derruba o pipeline.
+# Atualizar as regras passa a ser trocar o SHA acima, revisável como código.
+RUN git clone --filter=blob:none --no-checkout --quiet \
+        https://github.com/semgrep/semgrep-rules.git /opt/semgrep-rules \
+    && git -C /opt/semgrep-rules fetch --depth 1 --quiet origin "${SEMGREP_RULES_REF}" \
+    && git -C /opt/semgrep-rules checkout --quiet "${SEMGREP_RULES_REF}" \
+    && rm -rf /opt/semgrep-rules/.git \
+    && chmod -R a+rX /opt/semgrep-rules
+
+# O Trivy resolve as checagens de IaC a partir de um bundle versionado no GHCR.
+# Baixá-lo no build mantém a execução offline e determinística; o script usa
+# --skip-check-update para não revalidá-lo a cada estágio.
+ENV TRIVY_CACHE_DIR=/opt/trivy-cache
+RUN mkdir -p /opt/trivy-cache /tmp/trivy-warmup \
+    && printf 'FROM alpine:3\n' > /tmp/trivy-warmup/Dockerfile \
+    && trivy config --quiet /tmp/trivy-warmup >/dev/null \
+    && rm -rf /tmp/trivy-warmup \
+    && chmod -R a+rX /opt/trivy-cache
+
+# O Compose executa o container com o UID do Jenkins. Nenhuma das ferramentas
+# escreve fora do workspace, exceto o Semgrep, que guarda configurações no HOME
+# já apontado para /tmp pelo compose.ci.yaml.
+ENV SEMGREP_SEND_METRICS=off \
+    SEMGREP_ENABLE_VERSION_CHECK=0
