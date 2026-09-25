@@ -13,8 +13,13 @@ describe('Relatório de frames', () => {
     assert.equal(summary.p95RasterMs, 38);
     assert.equal(summary.p95TotalMs, 57);
     assertFrameBudget(summary, 60);
+    assertFrameBudget(summary, { buildMs: 20, rasterMs: 40, totalMs: 60 });
     assert.throws(() => assertFrameBudget(summary, 40), /total/);
     assert.throws(() => assertFrameBudget(summary, 30), /raster/);
+    assert.throws(
+      () => assertFrameBudget(summary, { buildMs: 18, rasterMs: 40, totalMs: 60 }),
+      /build/,
+    );
   });
 
   it('rejeita amostra vazia ou incompleta', () => {

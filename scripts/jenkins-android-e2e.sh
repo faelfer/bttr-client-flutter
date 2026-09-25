@@ -49,7 +49,7 @@ cleanup() {
     if [ -n "$mock_started" ]; then
         if [ "$status" -ne 0 ]; then
             docker compose -p "$mock_project" -f compose.e2e.yaml \
-                logs --no-color mock-api || true
+                logs --no-color --tail 100 mock-api || true
         fi
         docker compose -p "$mock_project" -f compose.e2e.yaml \
             down --remove-orphans || true

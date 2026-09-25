@@ -19,9 +19,19 @@ pipeline {
             description: 'Branch do bttr-server usada pelos testes E2E.'
         )
         string(
-            name: 'PERF_P95_FRAME_MS',
+            name: 'PERF_P95_BUILD_MS',
+            defaultValue: '50',
+            description: 'Limite do percentil 95 da construcao de frames, em ms.'
+        )
+        string(
+            name: 'PERF_P95_RASTER_MS',
             defaultValue: '250',
-            description: 'Limite inicial do percentil 95 de frames no emulador, em ms.'
+            description: 'Limite do percentil 95 da rasterizacao no emulador, em ms.'
+        )
+        string(
+            name: 'PERF_P95_TOTAL_MS',
+            defaultValue: '400',
+            description: 'Limite do percentil 95 da duracao total no emulador, em ms.'
         )
         string(
             name: 'PERF_STARTUP_MEDIAN_MS',

@@ -22,9 +22,27 @@ export function summarizeFrames(csv) {
   };
 }
 
-export function assertFrameBudget(summary, limitMs = Number(process.env.PERF_P95_FRAME_MS ?? 250)) {
-  assert(Number.isFinite(limitMs) && limitMs > 0, 'PERF_P95_FRAME_MS inválido');
-  assert(summary.p95BuildMs <= limitMs, `p95 build ${summary.p95BuildMs}ms > ${limitMs}ms`);
-  assert(summary.p95RasterMs <= limitMs, `p95 raster ${summary.p95RasterMs}ms > ${limitMs}ms`);
-  assert(summary.p95TotalMs <= limitMs, `p95 total ${summary.p95TotalMs}ms > ${limitMs}ms`);
+function configuredBudgets() {
+  return {
+    buildMs: Number(process.env.PERF_P95_BUILD_MS ?? 50),
+    rasterMs: Number(process.env.PERF_P95_RASTER_MS ?? 250),
+    totalMs: Number(process.env.PERF_P95_TOTAL_MS ?? 400),
+  };
+}
+
+export function assertFrameBudget(summary, budgets = configuredBudgets()) {
+  // Numeric input remains useful to callers that intentionally apply one
+  // threshold to every metric (and keeps this helper backwards compatible).
+  const limits = typeof budgets === 'number'
+    ? { buildMs: budgets, rasterMs: budgets, totalMs: budgets }
+    : budgets;
+  for (const [name, value] of Object.entries(limits)) {
+    assert(Number.isFinite(value) && value > 0, `Limite ${name} inválido`);
+  }
+  assert(summary.p95BuildMs <= limits.buildMs,
+    `p95 build ${summary.p95BuildMs}ms > ${limits.buildMs}ms`);
+  assert(summary.p95RasterMs <= limits.rasterMs,
+    `p95 raster ${summary.p95RasterMs}ms > ${limits.rasterMs}ms`);
+  assert(summary.p95TotalMs <= limits.totalMs,
+    `p95 total ${summary.p95TotalMs}ms > ${limits.totalMs}ms`);
 }

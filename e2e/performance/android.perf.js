@@ -80,13 +80,22 @@ describe('Performance Android com API mock', function () {
       writeFileSync('test-results/performance/frames.csv', csv);
       const summary = summarizeFrames(csv);
       writeFileSync('test-results/performance/frames.json', JSON.stringify(summary, null, 2));
+      console.log(
+        `Frames: ${summary.frameCount}; p95 build=${summary.p95BuildMs}ms; ` +
+        `raster=${summary.p95RasterMs}ms; total=${summary.p95TotalMs}ms`,
+      );
       // Capture a replay so Perfetto's tracing overhead cannot skew the gate.
       await recordTrace(async () => {
         await toTab('Habilidades', 'Minhas habilidades');
         await scrollSkills(driver);
         await toTab('Histórico', 'Histórico de tempo');
       });
-      assertFrameBudget(summary);
+      try {
+        assertFrameBudget(summary);
+      } catch (error) {
+        console.error(`Gate de frames reprovado: ${error.message}`);
+        throw error;
+      }
     } finally {
       await controlApp.close();
       await requestMockApi('/__admin/settings', { method: 'POST', body: { fixedDelay: 0 } });

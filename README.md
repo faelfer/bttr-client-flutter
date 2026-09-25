@@ -410,7 +410,10 @@ fluxo de interface e tem os cenários reiniciados antes da execução.
 O Appium percorre login, rolagem e histórico. O Flutter registra os tempos de
 construção, rasterização e duração total dos frames em
 `test-results/performance/frames.csv`; o teste reprova se não houver amostra
-ou se o percentil 95 ultrapassar `PERF_P95_FRAME_MS` (padrão inicial: 250 ms).
+ou se o percentil 95 ultrapassar o orçamento da métrica: `PERF_P95_BUILD_MS`
+(50 ms), `PERF_P95_RASTER_MS` (250 ms) ou `PERF_P95_TOTAL_MS` (400 ms). A
+duração total tem limite próprio porque inclui espera e agendamento do
+pipeline gráfico do emulador, além da construção e rasterização.
 O Macrobenchmark Android repete a abertura a frio cinco vezes e reprova se a
 mediana exceder `PERF_STARTUP_MEDIAN_MS` (padrão inicial: 10000 ms). O Jenkins
 publica os relatórios JUnit, resumos JSON e traces Perfetto. Ajuste os limites
